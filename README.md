@@ -20,7 +20,7 @@ This is not an officially supported Google product.
 Installation is currently a bit manual. First, install dependencies:
 
 ```
-pip3 install chex einops dm-haiku networkx
+pip3 install chex einops dm-haiku networkx typing_extensions
 ```
 
 Second, clone the repo:
