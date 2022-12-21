@@ -17,22 +17,13 @@ This is not an officially supported Google product.
 
 ## Installation
 
-Installation is currently a bit manual. First, install dependencies:
-
-```
-pip3 install chex einops dm-haiku networkx typing_extensions
-```
-
-Second, clone the repo:
+Just clone and pip install:
 
 ```
 git clone https://github.com/deepmind/tracr
+cd tracr
+pip3 install .
 ```
-
-Third, put the resulting folder somewhere in your `PYTHONPATH`
-(eg by placing the `tracr` checkout in the root of your project folder).
-
-This will be made easier in the future.
 
 
 ## Usage example: RASP `reverse` program
@@ -190,19 +181,5 @@ First, install test dependencies:
 pip3 install absl-py pytest
 ```
 
-```
-# We use `python3 -m pytest` instead of just `pytest` so that the working directory is
-# added to PYTHONPATH.
-# -ra: Report names of tests that failed, were skipped, etc.
-python3 -m pytest -ra
-```
-
-This should take about 60 seconds. If you install `pytest-xdist`, you can run them in
-parallel with:
-
-```
-python3 -m pytest -ra -n auto
-```
-
-However, currently this only shaves off about 10 seconds, since it's bottlenecked by a
-single long-running test.
+Then, in the checkout directory, simply run `pytest`. This should take about 60
+seconds.
