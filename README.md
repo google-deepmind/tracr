@@ -2,7 +2,9 @@
 
 Tracr is a compiler for converting RASP programs
 ([Weiss et al. 2021](https://arxiv.org/abs/2106.06981))
-into transformer weights.
+into transformer weights. Please see our
+[tech report](https://arxiv.org/abs/2301.05062) for a detailed description of
+the compiler.
 
 Directory structure:
 
@@ -170,7 +172,7 @@ The flow of compilation execution begins in
 directly to the stages outlined above, so don't be afraid to read the source!
 
 
-## Running tests
+### Running tests
 
 We use [`absltest`](https://abseil.io/docs/python/guides/testing), which is
 `unittest`-compatible, and is therefore in turn `pytest`-compatible.
@@ -183,3 +185,16 @@ pip3 install absl-py pytest
 
 Then, in the checkout directory, simply run `pytest`. This should take about 60
 seconds.
+
+## Citing Tracr
+
+Please use the bibtex for our tech report:
+
+```
+@article{lindner2023tracr,
+  title = {Tracr: Compiled Transformers as a Laboratory for Interpretability},
+  author = {Lindner, David and Kramár, János and Rahtz, Matthew and McGrath, Thomas and Mikulik, Vladimir},
+  journal={arXiv preprint arXiv:2301.05062},
+  year={2023}
+}
+```
