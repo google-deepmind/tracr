@@ -26,7 +26,7 @@ Forked from: haiku.examples.transformer.model
 
 import collections
 import dataclasses
-from typing import Callable, Optional
+from typing import Callable, Optional, List
 
 import chex
 import haiku as hk
@@ -44,9 +44,9 @@ CallableHaikuModule = Callable[..., jax.Array]
 
 @chex.dataclass
 class TransformerOutput:
-  layer_outputs: list[jax.Array]  # [B, T, D]
-  residuals: list[jax.Array]  # [B, T, D]
-  attn_logits: list[jax.Array]  # [B, H, T, T]
+  layer_outputs: List[jax.Array]  # [B, T, D]
+  residuals: List[jax.Array]  # [B, T, D]
+  attn_logits: List[jax.Array]  # [B, H, T, T]
   output: jax.Array  # [B, T, D]
   input_embeddings: jax.Array  # [B, T, D]
 

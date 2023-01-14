@@ -14,7 +14,8 @@
 # ==============================================================================
 """Attention head for categorical inputs."""
 
-from typing import Optional, Protocol
+from typing import Optional
+from typing_extensions import Protocol
 
 from tracr.craft import bases
 from tracr.craft import transformers

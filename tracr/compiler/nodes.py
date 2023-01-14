@@ -14,9 +14,9 @@
 # ==============================================================================
 """Documents the data stored in nodes after each compiler pass."""
 
-from typing import Any
+from typing import Any, Dict
 
-Node = dict[str, Any]
+Node = Dict[str, Any]
 NodeID = str
 
 # RASP -> Graph

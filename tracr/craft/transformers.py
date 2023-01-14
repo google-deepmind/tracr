@@ -16,7 +16,7 @@
 
 import abc
 import dataclasses
-from typing import Iterable, Optional, Sequence, Union
+from typing import Iterable, Optional, Sequence, Union, List
 
 import numpy as np
 
@@ -111,7 +111,7 @@ class AttentionHead(Block):
 @dataclasses.dataclass
 class MultiAttentionHead(Block):
   """Applies attention heads in parallel."""
-  sub_blocks: list[Union[AttentionHead, "MultiAttentionHead"]]
+  sub_blocks: List[Union[AttentionHead, "MultiAttentionHead"]]
 
   def __post_init__(self):
     spaces = [block.residual_space for block in self.sub_blocks]
@@ -182,7 +182,7 @@ HalfLayerBlock = Union[MLP, AttentionHead, MultiAttentionHead]
 @dataclasses.dataclass
 class SeriesWithResiduals(Block):
   """A series of blocks with residual connections."""
-  blocks: list[HalfLayerBlock]
+  blocks: List[HalfLayerBlock]
 
   def __post_init__(self):
     spaces = [block.residual_space for block in self.blocks]

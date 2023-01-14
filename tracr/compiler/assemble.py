@@ -15,7 +15,8 @@
 """Assemble weights of a transformer model from a craft residual stack."""
 
 import dataclasses
-from typing import Any, Callable, Optional, Protocol
+from typing import Any, Callable, Optional, List, Tuple
+from typing_extensions import Protocol
 
 import chex
 import einops
@@ -32,11 +33,11 @@ from tracr.transformer import model
 
 @chex.dataclass
 class AssembledTransformerModelOutput:
-  decoded: list[Any]  # length T.
+  decoded: List[Any]  # length T.
   unembedded: jax.Array  # [B, T]     B = 1 always.
-  layer_outputs: list[jax.Array]  # [B, T, D]
-  residuals: list[jax.Array]  # [B, T, D]
-  attn_logits: list[jax.Array]  # [B, T, T, H]
+  layer_outputs: List[jax.Array]  # [B, T, D]
+  residuals: List[jax.Array]  # [B, T, D]
+  attn_logits: List[jax.Array]  # [B, T, T, H]
   transformer_output: jax.Array  # [B, T, D]
   input_embeddings: jax.Array
 
@@ -58,11 +59,11 @@ class AssembledTransformerModel:
   get_compiled_model: Callable[[], model.CompiledTransformerModel]
   params: hk.Params
   model_config: model.TransformerConfig
-  residual_labels: list[str]
+  residual_labels: List[str]
   input_encoder: Optional[encoder.Encoder] = None
   output_encoder: Optional[encoder.Encoder] = None
 
-  def apply(self, tokens: list[bases.Value]) -> AssembledTransformerModelOutput:
+  def apply(self, tokens: List[bases.Value]) -> AssembledTransformerModelOutput:
     """Returns output from running the model on a set of input tokens."""
     if self.input_encoder:
       tokens = self.input_encoder.encode(tokens)
@@ -97,12 +98,12 @@ class EmbeddingModules:
 
 def _get_model_config_and_module_names(
     craft_model: transformers.SeriesWithResiduals
-) -> tuple[model.TransformerConfig, list[str]]:
+) -> Tuple[model.TransformerConfig, List[str]]:
   """Returns model config and locations (in params) for halflayers."""
 
-  multi_attn_heads: list[list[transformers.AttentionHead]] = []
-  mlps: list[transformers.MLP] = []
-  module_names: list[str] = []
+  multi_attn_heads: List[List[transformers.AttentionHead]] = []
+  mlps: List[transformers.MLP] = []
+  module_names: List[str] = []
 
   candidate_module_names = []
   for layer in range(len(craft_model.blocks)):

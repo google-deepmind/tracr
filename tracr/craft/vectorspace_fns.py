@@ -65,7 +65,7 @@ class Linear(VectorFunction):
 
   def __call__(self, x: VectorInBasis) -> VectorInBasis:
     if x not in self.input_space:
-      raise TypeError(f"{x=} not in {self.input_space=}.")
+      raise TypeError(f"x={x} not in self.input_space={self.input_space}.")
     return VectorInBasis(
         basis_directions=sorted(self.output_space.basis),
         magnitudes=x.magnitudes @ self.matrix,
@@ -84,8 +84,8 @@ class Linear(VectorFunction):
     for i, direction in enumerate(input_space.basis):
       out_vector = action(direction)
       if out_vector not in output_space:
-        raise TypeError(f"image of {direction} from {input_space=} "
-                        f"is not in {output_space=}")
+        raise TypeError(f"image of {direction} from input_space={input_space} "
+                        f"is not in output_space={output_space}")
       matrix[i, :] = out_vector.magnitudes
 
     return Linear(input_space, output_space, matrix)
@@ -140,9 +140,9 @@ class ScalarBilinear:
   def __call__(self, x: VectorInBasis, y: VectorInBasis) -> float:
     """Describes the action of the operator on vectors."""
     if x not in self.left_space:
-      raise TypeError(f"{x=} not in {self.left_space=}.")
+      raise TypeError(f"x={x} not in self.left_space={self.left_space}.")
     if y not in self.right_space:
-      raise TypeError(f"{y=} not in {self.right_space=}.")
+      raise TypeError(f"y={y} not in self.right_space={self.right_space}.")
     return (x.magnitudes.T @ self.matrix @ y.magnitudes).item()
 
   @classmethod

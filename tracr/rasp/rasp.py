@@ -16,7 +16,7 @@
 
 Every object in the RASP language is a function.
 
-The most important type is S-Op, which is a function list[Value] -> list[Value].
+The most important type is S-Op, which is a function List[Value] -> List[Value].
 
 An S-Op represents a state inside the residual stream of the transformer.
 Therefore, any RASP program that represents a transformer computation must
@@ -26,11 +26,12 @@ end of the computation. In particular, given an S-Op `x`,
 at location `x` when the transformer is fed [1, 2, 3] as input.
 
 A secondary (but still important) type is Selector, which is a function
-list[Value] -> list[list[bool]]. Given a Selector `sel`, sel([1, 2, 3])
+List[Value] -> List[List[bool]]. Given a Selector `sel`, sel([1, 2, 3])
 represents something like an attention matrix in the transformer.
 
 For a full reference on RASP, see https://arxiv.org/abs/2106.06981.
 """
+import pdb
 
 import abc
 import collections.abc
@@ -38,13 +39,14 @@ import copy
 import enum
 import functools
 import itertools
-from typing import (Any, Callable, Generic, Mapping, Optional, Protocol,
+from typing import (Any, Callable, Generic, Mapping, Optional, List, Dict,
                     Sequence, TypeVar, Union)
+from typing_extensions import Protocol
 from absl import logging
 
 import numpy as np
 
-SelectorValue = list[list[bool]]
+SelectorValue = List[List[bool]]
 NumericValue = Union[int, float]
 Value = Union[None, int, float, str, bool]
 VT = TypeVar("VT", bound=Value)
@@ -63,7 +65,7 @@ _ENCODING_KEY = "encoding"
 # that key is accessed.
 #
 # See the `default_name` annotator for a full example.
-DEFAULT_ANNOTATORS: dict[str, "Annotator"] = {}
+DEFAULT_ANNOTATORS: Dict[str, "Annotator"] = {}
 
 
 class Annotator(Protocol):
@@ -81,7 +83,7 @@ class _Annotations(collections.abc.Mapping):
 
   def __init__(self, expr, **kwargs: Any):
     self._expr = expr
-    self._inner_dict: dict[str, Any] = {**kwargs}
+    self._inner_dict: Dict[str, Any] = {**kwargs}
 
   def __getitem__(self, key: str) -> Any:
     if key not in self._inner_dict:
@@ -758,7 +760,7 @@ _default_name_by_class = {
 }
 
 
-def default_name(expr: RASPExpr) -> dict[str, str]:
+def default_name(expr: RASPExpr) -> Dict[str, str]:
   for cls, name in _default_name_by_class.items():
     if isinstance(expr, cls):
       return name
@@ -905,7 +907,7 @@ class DefaultRASPEvaluator(abc.ABC):
 
 
 def _get_selected(
-    selector_row: list[bool],
+    selector_row: List[bool],
     values: Sequence[VT],
 ) -> Sequence[VT]:
   """Helper for aggregate. [T T F], [a b c] -> [a b]."""

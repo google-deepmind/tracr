@@ -15,7 +15,7 @@
 """Create a craft model from a computational graph."""
 
 import collections
-from typing import Sequence
+from typing import Sequence, List, Dict
 
 import networkx as nx
 from tracr.compiler import nodes
@@ -105,7 +105,7 @@ def _all_mlp_nodes(node_list: Sequence[Node]) -> bool:
 
 
 def _allocate_modules_to_layers(graph: nx.DiGraph,
-                                sources: Sequence[Node]) -> dict[int, int]:
+                                sources: Sequence[Node]) -> Dict[int, int]:
   """Allocate all nodes in compute graph to layers.
 
   First, computes the longest path from the input to each node that is a model
@@ -128,9 +128,9 @@ def _allocate_modules_to_layers(graph: nx.DiGraph,
     A dict mapping from node ids to layer indices, where 0, 1, 2, 3, ...
     are in the order attention, mlp, attention, mlp, ...
   """
-  layer_allocation: dict[int, int] = collections.defaultdict(lambda: -1)
-  depth_by_node_id: dict[int, int] = dict()
-  nodes_by_depth: dict[int, list[Node]] = collections.defaultdict(list)
+  layer_allocation: Dict[int, int] = collections.defaultdict(lambda: -1)
+  depth_by_node_id: Dict[int, int] = dict()
+  nodes_by_depth: Dict[int, List[Node]] = collections.defaultdict(list)
 
   # Compute depth of all model components (longest path from source to node)
   for node_id, node in graph.nodes.items():
