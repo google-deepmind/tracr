@@ -16,7 +16,7 @@
 
 import abc
 import dataclasses
-from typing import Iterable, Optional, Sequence, Union, List
+from typing import Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 
