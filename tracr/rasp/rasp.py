@@ -39,7 +39,7 @@ import copy
 import enum
 import functools
 import itertools
-from typing import (Any, Callable, Dict, Generic, Mapping, Optional, List,
+from typing import (Any, Callable, Dict, Generic, List, Mapping, Optional,
                     Sequence, TypeVar, Union)
 from typing_extensions import Protocol
 from absl import logging
