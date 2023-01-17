@@ -14,7 +14,7 @@
 # ==============================================================================
 """RASP programs only using the subset of RASP supported by the compiler."""
 
-from typing import Sequence, List
+from typing import List, Sequence
 
 from tracr.rasp import rasp
 
