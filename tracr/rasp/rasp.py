@@ -40,7 +40,7 @@ import functools
 import itertools
 from typing import (Any, Callable, Dict, Generic, List, Mapping, Optional,
                     Sequence, TypeVar, Union)
-                    
+
 from absl import logging
 import numpy as np
 from typing_extensions import Protocol
