@@ -31,7 +31,6 @@ represents something like an attention matrix in the transformer.
 
 For a full reference on RASP, see https://arxiv.org/abs/2106.06981.
 """
-import pdb
 
 import abc
 import collections.abc
