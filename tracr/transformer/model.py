@@ -26,7 +26,7 @@ Forked from: haiku.examples.transformer.model
 
 import collections
 import dataclasses
-from typing import Callable, Optional, List
+from typing import Callable, List, Optional
 
 import chex
 import haiku as hk
