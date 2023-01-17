@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Combines all steps of compiling a RASP program."""
+
 from typing import Set
 
 from tracr.compiler import assemble
