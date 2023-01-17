@@ -15,7 +15,7 @@
 """Create a craft model from a computational graph."""
 
 import collections
-from typing import Sequence, List, Dict
+from typing import Dict, List, Sequence
 
 import networkx as nx
 from tracr.compiler import nodes
