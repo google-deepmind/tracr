@@ -98,11 +98,11 @@ You can also inspect some of the intermediate activations of the model, using
 `out.residuals`, `out.layer_outputs`, and `out.attn_logits`.
 
 For more examples of RASP programs we can compile, check out
-[compiler/lib.py](compiler/lib.py).
+[compiler/lib.py](tracr/compiler/lib.py).
 
 For an interactive example of compiling a model and visualizing its computation,
 check out the notebook at
-[examples/Visualize\_Tracr\_Models.ipynb](examples/Visualize_Tracr_Models.ipynb).
+[examples/Visualize\_Tracr\_Models.ipynb](tracr/examples/Visualize_Tracr_Models.ipynb).
 
 
 ## Developer README
@@ -167,7 +167,7 @@ sequences fed into the final model _must_ start with a BOS token.
 ### How Tracr works in practice
 
 The flow of compilation execution begins in
-[`compiler/compiling.py`](compiler/compiling.py), in the
+[`compiler/compiling.py`](tracr/compiler/compiling.py), in the
 `compile_rasp_to_model` function. This function is fairly short and maps
 directly to the stages outlined above, so don't be afraid to read the source!
 
