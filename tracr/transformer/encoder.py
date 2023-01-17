@@ -15,7 +15,7 @@
 """Basic encoder for inputs with a fixed vocabulary."""
 
 import abc
-from typing import Any, Sequence, Optional
+from typing import Any, List, Optional, Sequence
 
 from tracr.craft import bases
 
@@ -28,11 +28,11 @@ class Encoder(abc.ABC):
   """
 
   @abc.abstractmethod
-  def encode(self, inputs: list[Any]) -> list[Any]:
+  def encode(self, inputs: List[Any]) -> List[Any]:
     return list()
 
   @abc.abstractmethod
-  def decode(self, encodings: list[Any]) -> list[Any]:
+  def decode(self, encodings: List[Any]) -> List[Any]:
     return list()
 
   @property
@@ -55,10 +55,10 @@ class Encoder(abc.ABC):
 class NumericalEncoder(Encoder):
   """Encodes numerical variables (simply using the identity mapping)."""
 
-  def encode(self, inputs: list[float]) -> list[float]:
+  def encode(self, inputs: List[float]) -> List[float]:
     return inputs
 
-  def decode(self, encodings: list[float]) -> list[float]:
+  def decode(self, encodings: List[float]) -> List[float]:
     return encodings
 
 
@@ -93,7 +93,7 @@ class CategoricalEncoder(Encoder):
     self._pad_token = pad_token
     self._max_seq_len = max_seq_len
 
-  def encode(self, inputs: list[bases.Value]) -> list[int]:
+  def encode(self, inputs: List[bases.Value]) -> List[int]:
     if self.enforce_bos and inputs[0] != self.bos_token:
       raise ValueError("First input token must be BOS token. "
                        f"Should be '{self.bos_token}', but was '{inputs[0]}'.")
@@ -101,12 +101,12 @@ class CategoricalEncoder(Encoder):
       raise ValueError(f"Inputs {missing} not found in encoding ",
                        self.encoding_map.keys())
     if self._max_seq_len is not None and len(inputs) > self._max_seq_len:
-      raise ValueError(f"{inputs=} are longer than the maximum "
+      raise ValueError(f"inputs={inputs} are longer than the maximum "
                        f"sequence length {self._max_seq_len}")
 
     return [self.encoding_map[x] for x in inputs]
 
-  def decode(self, encodings: list[int]) -> list[bases.Value]:
+  def decode(self, encodings: List[int]) -> List[bases.Value]:
     """Recover the tokens that corresponds to `ids`. Inverse of __call__."""
     decoding_map = {val: key for key, val in self.encoding_map.items()}
     if missing := set(encodings) - set(decoding_map.keys()):

@@ -38,7 +38,7 @@ class CompilerIntegrationTest(tests_common.VectorFnTestCase):
     for actual, expected in zip(actual_seq, expected_seq):
       if expected is not None and actual != expected:
         self.fail(f"{actual_seq} does not match (ignoring Nones) "
-                  f"{expected_seq=}")
+                  f"expected_seq={expected_seq}")
 
   @parameterized.named_parameters(
       dict(

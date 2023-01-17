@@ -16,6 +16,7 @@
 
 import dataclasses
 import itertools
+from typing import Set
 
 import networkx as nx
 from tracr.compiler import nodes
@@ -34,12 +35,12 @@ class InferBasesOutput:
 def infer_bases(
     graph: nx.DiGraph,
     sink: Node,
-    vocab: set[rasp.Value],
+    vocab: Set[rasp.Value],
     max_seq_len: int,
 ) -> None:
   """Infers in-place the possible output values and vector bases of the SOps."""
 
-  def compute_value_set(sop: rasp.SOp) -> set[rasp.Value]:
+  def compute_value_set(sop: rasp.SOp) -> Set[rasp.Value]:
     """Computes value set using already-computed predecessor value sets."""
     if sop is rasp.tokens:
       return vocab

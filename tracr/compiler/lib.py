@@ -14,7 +14,7 @@
 # ==============================================================================
 """RASP programs only using the subset of RASP supported by the compiler."""
 
-from typing import Sequence
+from typing import List, Sequence
 
 from tracr.rasp import rasp
 
@@ -95,7 +95,7 @@ def make_pair_balance(sop: rasp.SOp, open_token: str,
   return pair_balance.named("pair_balance")
 
 
-def make_shuffle_dyck(pairs: list[str]) -> rasp.SOp:
+def make_shuffle_dyck(pairs: List[str]) -> rasp.SOp:
   """Returns 1 if a set of parentheses are balanced, 0 else.
 
    (As implemented in the RASP paper.)

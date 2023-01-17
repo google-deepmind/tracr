@@ -14,6 +14,8 @@
 # ==============================================================================
 """Combines all steps of compiling a RASP program."""
 
+from typing import Set
+
 from tracr.compiler import assemble
 from tracr.compiler import basis_inference
 from tracr.compiler import craft_graph_to_model
@@ -29,7 +31,7 @@ COMPILER_PAD = "compiler_pad"
 
 def compile_rasp_to_model(
     program: rasp.SOp,
-    vocab: set[rasp.Value],
+    vocab: Set[rasp.Value],
     max_seq_len: int,
     causal: bool = False,
     compiler_bos: str = COMPILER_BOS,

@@ -16,7 +16,7 @@
 
 import dataclasses
 
-from typing import Callable, Iterable
+from typing import Callable, Iterable, List
 
 from tracr.craft import bases
 from tracr.craft import transformers
@@ -35,7 +35,7 @@ class DiscretisingLayerMaterials:
   """
   action: Callable[[bases.BasisDirection], bases.VectorInBasis]
   hidden_space: bases.VectorSpaceWithBasis
-  output_values: list[float]
+  output_values: List[float]
 
 
 def _get_discretising_layer(input_value_set: Iterable[float],

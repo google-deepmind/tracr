@@ -16,6 +16,7 @@
 
 import dataclasses
 import queue
+from typing import List
 
 import networkx as nx
 from tracr.compiler import nodes
@@ -29,14 +30,14 @@ NodeID = nodes.NodeID
 class ExtractRaspGraphOutput:
   graph: nx.DiGraph
   sink: Node  # the program's output.
-  sources: list[Node]  # the primitive S-Ops.
+  sources: List[Node]  # the primitive S-Ops.
 
 
 def extract_rasp_graph(tip: rasp.SOp) -> ExtractRaspGraphOutput:
   """Converts a RASP program into a graph representation."""
   expr_queue = queue.Queue()
   graph = nx.DiGraph()
-  sources: list[NodeID] = []
+  sources: List[NodeID] = []
 
   def ensure_node(expr: rasp.RASPExpr) -> NodeID:
     """Finds or creates a graph node corresponding to expr; returns its ID."""

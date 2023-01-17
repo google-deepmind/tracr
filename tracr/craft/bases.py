@@ -243,5 +243,5 @@ def ensure_dims(
 ) -> None:
   """Raises ValueError if vs has the wrong number of dimensions."""
   if vs.num_dims != num_dims:
-    raise ValueError(f"{name} must have {num_dims=}, "
+    raise ValueError(f"{name} must have num_dims={num_dims}, "
                      f"but got {vs.num_dims}: {vs.basis}")
