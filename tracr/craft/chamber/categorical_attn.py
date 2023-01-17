@@ -15,11 +15,11 @@
 """Attention head for categorical inputs."""
 
 from typing import Optional
-from typing_extensions import Protocol
 
 from tracr.craft import bases
 from tracr.craft import transformers
 from tracr.craft import vectorspace_fns
+from typing_extensions import Protocol
 
 
 class QueryKeyToAttnLogit(Protocol):
