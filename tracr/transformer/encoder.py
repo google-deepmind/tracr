@@ -15,7 +15,7 @@
 """Basic encoder for inputs with a fixed vocabulary."""
 
 import abc
-from typing import Any, Sequence, Optional, List
+from typing import Any, List, Optional, Sequence
 
 from tracr.craft import bases
 
