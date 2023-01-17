@@ -16,7 +16,6 @@
 
 import dataclasses
 from typing import Any, Callable, Optional, List, Tuple
-from typing_extensions import Protocol
 
 import chex
 import einops
@@ -29,6 +28,7 @@ from tracr.craft import transformers
 from tracr.craft import vectorspace_fns
 from tracr.transformer import encoder
 from tracr.transformer import model
+from typing_extensions import Protocol
 
 
 @chex.dataclass
