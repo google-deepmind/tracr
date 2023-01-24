@@ -76,7 +76,7 @@ def infer_bases(
         # TODO(b/255936408): This doesn't work if we average arbitrary values.
         # But most examples only average binary variables.
         sop_value_set = graph.nodes[sop.sop.label][nodes.VALUE_SET]
-        if {int(x) for x in sop_value_set} != {0, 1}:
+        if not {int(x) for x in sop_value_set}.issubset({0, 1}):
           raise NotImplementedError(
               "Attention patterns can currently only "
               "average binary variables. Not:", sop_value_set)
