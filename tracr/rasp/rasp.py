@@ -331,7 +331,20 @@ class Map(SOp):
   Map(lambda x: x + 1, tokens).eval([1, 2, 3]) == [2, 3, 4]
   """
 
-  def __init__(self, f: Callable[[Value], Value], inner: SOp):
+  def __init__(
+      self,
+      f: Callable[[Value], Value],
+      inner: SOp,
+      simplify: bool = True,
+  ):
+    """Initialises.
+
+    Args:
+      f: the function to apply elementwise.
+      inner: the SOp to which to apply `f`.
+      simplify: if True and if `inner` is also a Map, will combine the new map
+        and `inner` into a single Map object.
+    """
     super().__init__()
     self.f = f
     self.inner = inner
@@ -339,7 +352,7 @@ class Map(SOp):
     assert isinstance(self.inner, SOp)
     assert callable(self.f) and not isinstance(self.f, RASPExpr)
 
-    if isinstance(self.inner, Map):
+    if simplify and isinstance(self.inner, Map):
       # Combine the functions into just one.
       inner_f = self.inner.f
       self.f = lambda t: f(inner_f(t))
@@ -356,7 +369,12 @@ class SequenceMap(SOp):
   SequenceMap(lambda x, y: x - y, length, tokens).eval([1, 2, 3]) == [2, 1, 0]
   """
 
-  def __init__(self, f: Callable[[Value, Value], Value], fst: SOp, snd: SOp):
+  def __init__(
+      self,
+      f: Callable[[Value, Value], Value],
+      fst: SOp,
+      snd: SOp,
+  ):
     super().__init__()
 
     if fst == snd:

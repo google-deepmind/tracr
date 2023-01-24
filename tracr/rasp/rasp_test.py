@@ -147,6 +147,11 @@ class SOpTest(parameterized.TestCase):
     self.assertEqual(map_sop.inner, rasp.tokens)
     self.assertEqual(map_sop([1]), [2])
 
+  def test_nested_maps_result_in_two_map_objects_if_simplify_set_to_false(self):
+    map_sop = rasp.Map(lambda x: x + 2, (rasp.tokens * 2), simplify=False)
+    self.assertNotEqual(map_sop.inner, rasp.tokens)
+    self.assertEqual(map_sop([1]), [4])
+
   @parameterized.parameters(
       (lambda x, y: x + y, "hello", ["hh", "ee", "ll", "ll", "oo"]),
       (lambda x, y: x + y, "h", ["hh"]),
