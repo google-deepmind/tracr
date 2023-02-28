@@ -183,7 +183,7 @@ def _make_embedding_modules(
 
   # Token embeddings.
   res_to_out = vectorspace_fns.project(residual_space, output_space)
-  token_embed = hk.Embed(
+  token_embed = hk.Embed(  # pytype: disable=wrong-arg-types  # jax-ndarray
       embedding_matrix=tokens_to_res.matrix, name="token_embed")
 
   # Positional embeddings.
