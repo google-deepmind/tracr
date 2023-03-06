@@ -265,6 +265,7 @@ def assemble_craft_model(
     return compiled_model(emb, use_dropout=False)
 
   params = forward.init(jax.random.PRNGKey(0), jnp.array([[1, 2, 3]]))
+  params = {k: dict(v) for k, v in params.items()}
 
   for key in params:
     if "transformer" in key:
