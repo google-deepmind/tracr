@@ -186,6 +186,24 @@ pip3 install absl-py pytest
 Then, in the checkout directory, simply run `pytest`. This should take about 60
 seconds.
 
+
+## Superposition
+
+One topic that we've investigated using Tracr is superposition (see e.g.
+[Elhage et al 2023](https://transformer-circuits.pub/2022/toy_model/index.html)):
+in this work, we learn a compressed embedding of the residual stream in such a
+way as to keep the computation faithful to the uncompressed program.
+
+This is an example showing the dot products between embedding vectors for the
+`frac_prevs` example program from [compiler/lib.py](tracr/compiler/lib.py):
+
+![Matrix of dot-products](compression_heatmap.png)
+
+The code for learning these embeddings is not included in this repository, but
+you can read more about it in Section 5 of the
+[tech report](https://arxiv.org/abs/2301.05062).
+
+
 ## Citing Tracr
 
 Please use the bibtex for our tech report:
