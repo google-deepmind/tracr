@@ -26,10 +26,11 @@ class SelectorWidthTest(tests_common.VectorFnTestCase):
   @parameterized.product(
       causal=[False, True],
       categorical_output=[False, True],
-      input_seq=[[1, 2, 3, 4, 5], [-1, 0, 1], [10]])
-  def test_selector_width_of_select_all_is_length(self, causal,
-                                                  categorical_output,
-                                                  input_seq):
+      input_seq=[[1, 2, 3, 4, 5], [-1, 0, 1], [10]],
+  )
+  def test_selector_width_of_select_all_is_length(
+      self, causal, categorical_output, input_seq
+  ):
     vocab = range(-20, 20)
     input_space = bases.VectorSpaceWithBasis.from_values("input", vocab)
 
@@ -37,7 +38,8 @@ class SelectorWidthTest(tests_common.VectorFnTestCase):
       output_space = bases.VectorSpaceWithBasis.from_values("output", range(10))
     else:
       output_space = bases.VectorSpaceWithBasis(
-          [bases.BasisDirection("output")])
+          [bases.BasisDirection("output")]
+      )
 
     bos_dir = bases.BasisDirection("bos_dimension")
     bos_space = bases.VectorSpaceWithBasis([bos_dir])
@@ -60,13 +62,17 @@ class SelectorWidthTest(tests_common.VectorFnTestCase):
         out_value_set=set(range(len(input_seq) + 1)),
         categorical_output=categorical_output,
         causal=causal,
-        label="select_all")
+        label="select_all",
+    )
 
     test_inputs = [bos_vec + one_vec]
     for x in input_seq:
       test_inputs.append(
           residual_space.vector_from_basis_direction(
-              bases.BasisDirection("input", x)) + one_vec)
+              bases.BasisDirection("input", x)
+          )
+          + one_vec
+      )
     test_inputs = bases.VectorInBasis.stack(test_inputs)
 
     # Expect length of the input sequence
@@ -78,25 +84,76 @@ class SelectorWidthTest(tests_common.VectorFnTestCase):
     if categorical_output:
       expected_results = [
           output_space.vector_from_basis_direction(
-              bases.BasisDirection("output", x)) for x in expected_results
+              bases.BasisDirection("output", x)
+          )
+          for x in expected_results
       ]
     else:
       output_vec = output_space.vector_from_basis_direction(
-          bases.BasisDirection("output"))
+          bases.BasisDirection("output")
+      )
       expected_results = [x * output_vec for x in expected_results]
 
     expected_results = bases.VectorInBasis.stack(expected_results)
 
     test_outputs = block.apply(test_inputs).project(output_space)
     self.assertVectorAllClose(
-        tests_common.strip_bos_token(test_outputs), expected_results)
+        tests_common.strip_bos_token(test_outputs), expected_results
+    )
 
   @parameterized.product(
       causal=[False, True],
       categorical_output=[False, True],
-      input_seq=[[1, 2, 3, 4, 5], [-1, 0, 1], [10]])
-  def test_selector_width_of_select_none_is_zero(self, causal,
-                                                 categorical_output, input_seq):
+      input_seq=[[1] * 20, [2] * 50],
+  )
+  def test_selector_width_works_for_long_sequences(
+      self, causal, categorical_output, input_seq
+  ):
+    vocab = range(-20, 20)
+    input_space = bases.VectorSpaceWithBasis.from_values("input", vocab)
+
+    if categorical_output:
+      output_space = bases.VectorSpaceWithBasis.from_values(
+          "output", range(100)
+      )
+    else:
+      output_space = bases.VectorSpaceWithBasis(
+          [bases.BasisDirection("output")]
+      )
+
+    bos_dir = bases.BasisDirection("bos_dimension")
+    bos_space = bases.VectorSpaceWithBasis([bos_dir])
+
+    one_dir = bases.BasisDirection("one_dimension")
+    one_space = bases.VectorSpaceWithBasis([one_dir])
+
+    input_space = bases.join_vector_spaces(input_space, bos_space, one_space)
+
+    try:
+      selector_width.selector_width(
+          query_space=input_space,
+          key_space=input_space,
+          output_space=output_space,
+          bos_space=bos_space,
+          one_space=one_space,
+          attn_fn=lambda x, y: True,
+          out_value_set=set(range(len(input_seq) + 1)),
+          categorical_output=categorical_output,
+          causal=causal,
+          label="select_all",
+      )
+    except AssertionError as e:
+      if "output value mismatch" in str(e):
+        self.fail(str(e))
+
+  @parameterized.product(
+      causal=[False, True],
+      categorical_output=[False, True],
+      input_seq=[[1, 2, 3, 4, 5], [-1, 0, 1], [10]],
+  )
+  def test_selector_width_of_select_none_is_zero(
+      self, causal, categorical_output, input_seq
+  ):
     vocab = range(-20, 20)
     input_space = bases.VectorSpaceWithBasis.from_values("input", vocab)
 
@@ -104,7 +161,8 @@ class SelectorWidthTest(tests_common.VectorFnTestCase):
       output_space = bases.VectorSpaceWithBasis.from_values("output", range(10))
     else:
       output_space = bases.VectorSpaceWithBasis(
-          [bases.BasisDirection("output")])
+          [bases.BasisDirection("output")]
+      )
 
     bos_dir = bases.BasisDirection("bos_dimension")
     bos_space = bases.VectorSpaceWithBasis([bos_dir])
@@ -127,20 +185,26 @@ class SelectorWidthTest(tests_common.VectorFnTestCase):
         out_value_set=set(range(len(input_seq) + 1)),
         categorical_output=categorical_output,
         causal=causal,
-        label="select_all")
+        label="select_all",
+    )
 
     test_inputs = [bos_vec + one_vec]
     for x in input_seq:
       test_inputs.append(
           residual_space.vector_from_basis_direction(
-              bases.BasisDirection("input", x)) + one_vec)
+              bases.BasisDirection("input", x)
+          )
+          + one_vec
+      )
     test_inputs = bases.VectorInBasis.stack(test_inputs)
 
     # Expect zero output
     if categorical_output:
       expected_results = [
           output_space.vector_from_basis_direction(
-              bases.BasisDirection("output", 0)) for _ in input_seq
+              bases.BasisDirection("output", 0)
+          )
+          for _ in input_seq
       ]
     else:
       expected_results = [output_space.null_vector() for _ in input_seq]
@@ -148,7 +212,8 @@ class SelectorWidthTest(tests_common.VectorFnTestCase):
 
     test_outputs = block.apply(test_inputs).project(output_space)
     self.assertVectorAllClose(
-        tests_common.strip_bos_token(test_outputs), expected_results)
+        tests_common.strip_bos_token(test_outputs), expected_results
+    )
 
 
 if __name__ == "__main__":

@@ -15,7 +15,6 @@
 """MLPs to compute arbitrary numerical functions by discretising."""
 
 import dataclasses
-
 from typing import Callable, Iterable, List
 
 from tracr.craft import bases
@@ -33,16 +32,19 @@ class DiscretisingLayerMaterials:
     hidden_space: Vector space of the hidden representation of the layer.
     output_values: Set of output values that correspond to the discretisation.
   """
+
   action: Callable[[bases.BasisDirection], bases.VectorInBasis]
   hidden_space: bases.VectorSpaceWithBasis
   output_values: List[float]
 
 
-def _get_discretising_layer(input_value_set: Iterable[float],
-                            f: Callable[[float],
-                                        float], hidden_name: bases.Name,
-                            one_direction: bases.BasisDirection,
-                            large_number: float) -> DiscretisingLayerMaterials:
+def _get_discretising_layer(
+    input_value_set: Iterable[float],
+    f: Callable[[float], float],
+    hidden_name: bases.Name,
+    one_direction: bases.BasisDirection,
+    large_number: float,
+) -> DiscretisingLayerMaterials:
   """Creates a hidden layer that discretises the input of f(x) into a value set.
 
   The input is split up into a distinct region around each value in
@@ -98,14 +100,17 @@ def _get_discretising_layer(input_value_set: Iterable[float],
     # hidden_k_1 = ReLU(L * (x - threshold[k]))
     if direction == one_direction:
       hidden = hidden_space.vector_from_basis_direction(
-          bases.BasisDirection(f"{hidden_name}start"))
+          bases.BasisDirection(f"{hidden_name}start")
+      )
     else:
       hidden = hidden_space.null_vector()
     for k in range(1, num_vals):
       vec0 = hidden_space.vector_from_basis_direction(
-          bases.BasisDirection(hidden_name, (k, 0)))
+          bases.BasisDirection(hidden_name, (k, 0))
+      )
       vec1 = hidden_space.vector_from_basis_direction(
-          bases.BasisDirection(hidden_name, (k, 1)))
+          bases.BasisDirection(hidden_name, (k, 1))
+      )
       if direction == one_direction:
         hidden += (1 - large_number * value_thresholds[k - 1]) * vec0
         hidden -= large_number * value_thresholds[k - 1] * vec1
@@ -114,7 +119,8 @@ def _get_discretising_layer(input_value_set: Iterable[float],
     return hidden
 
   return DiscretisingLayerMaterials(
-      action=action, hidden_space=hidden_space, output_values=output_values)
+      action=action, hidden_space=hidden_space, output_values=output_values
+  )
 
 
 def map_numerical_mlp(
@@ -181,12 +187,15 @@ def map_numerical_mlp(
       f=f,
       hidden_name=hidden_name,
       one_direction=one_space.basis[0],
-      large_number=large_number)
+      large_number=large_number,
+  )
   first_layer = vectorspace_fns.Linear.from_action(
-      input_space, discretising_layer.hidden_space, discretising_layer.action)
+      input_space, discretising_layer.hidden_space, discretising_layer.action
+  )
 
   def second_layer_action(
-      direction: bases.BasisDirection) -> bases.VectorInBasis:
+      direction: bases.BasisDirection,
+  ) -> bases.VectorInBasis:
     # output = sum(
     #     (hidden_k_0 - hidden_k_1) * (f(input[k]) - f(input[k-1]))
     #   for all k)
@@ -195,11 +204,18 @@ def map_numerical_mlp(
     k, i = direction.value
     # add hidden_k_0 and subtract hidden_k_1
     sign = {0: 1, 1: -1}[i]
-    return sign * (discretising_layer.output_values[k] -
-                   discretising_layer.output_values[k - 1]) * out_vec
+    return (
+        sign
+        * (
+            discretising_layer.output_values[k]
+            - discretising_layer.output_values[k - 1]
+        )
+        * out_vec
+    )
 
   second_layer = vectorspace_fns.Linear.from_action(
-      discretising_layer.hidden_space, output_space, second_layer_action)
+      discretising_layer.hidden_space, output_space, second_layer_action
+  )
 
   return transformers.MLP(first_layer, second_layer)
 
@@ -239,8 +255,9 @@ def map_numerical_to_categorical_mlp(
   for d in output_space.basis:
     # TODO(b/255937603): Do a similar assert in other places where we expect
     # categorical basis directions to encode values.
-    assert d.value is not None, ("output directions need to encode "
-                                 "possible output values")
+    assert (
+        d.value is not None
+    ), "output directions need to encode possible output values"
     vec_by_out_val[d.value] = output_space.vector_from_basis_direction(d)
 
   discretising_layer = _get_discretising_layer(
@@ -248,16 +265,24 @@ def map_numerical_to_categorical_mlp(
       f=f,
       hidden_name=hidden_name,
       one_direction=one_space.basis[0],
-      large_number=large_number)
+      large_number=large_number,
+  )
 
   assert set(discretising_layer.output_values).issubset(
-      set(vec_by_out_val.keys()))
+      set(vec_by_out_val.keys())
+  ), (
+      "output value mismatch. output_values:"
+      f" {set(discretising_layer.output_values)}, vec_by_out_val:"
+      f" {set(vec_by_out_val.keys())}"
+  )
 
   first_layer = vectorspace_fns.Linear.from_action(
-      input_space, discretising_layer.hidden_space, discretising_layer.action)
+      input_space, discretising_layer.hidden_space, discretising_layer.action
+  )
 
   def second_layer_action(
-      direction: bases.BasisDirection) -> bases.VectorInBasis:
+      direction: bases.BasisDirection,
+  ) -> bases.VectorInBasis:
     """Computes output value and returns corresponding output direction."""
     if direction.name == f"{hidden_name}start":
       return vec_by_out_val[discretising_layer.output_values[0]]
@@ -270,7 +295,8 @@ def map_numerical_to_categorical_mlp(
       return sign * (vec_by_out_val[out_k] - vec_by_out_val[out_k_m_1])
 
   second_layer = vectorspace_fns.Linear.from_action(
-      discretising_layer.hidden_space, output_space, second_layer_action)
+      discretising_layer.hidden_space, output_space, second_layer_action
+  )
 
   return transformers.MLP(first_layer, second_layer)
 
@@ -294,7 +320,8 @@ def linear_sequence_map_numerical_mlp(
     hidden_name: Name for hidden dimensions.
   """
   input_space = bases.VectorSpaceWithBasis(
-      [input1_basis_direction, input2_basis_direction])
+      [input1_basis_direction, input2_basis_direction]
+  )
   output_space = bases.VectorSpaceWithBasis([output_basis_direction])
   out_vec = output_space.vector_from_basis_direction(output_basis_direction)
 
@@ -302,14 +329,16 @@ def linear_sequence_map_numerical_mlp(
       bases.BasisDirection(f"{hidden_name}x", 1),
       bases.BasisDirection(f"{hidden_name}x", -1),
       bases.BasisDirection(f"{hidden_name}y", 1),
-      bases.BasisDirection(f"{hidden_name}y", -1)
+      bases.BasisDirection(f"{hidden_name}y", -1),
   ]
   hidden_space = bases.VectorSpaceWithBasis(hidden_directions)
   x_pos_vec, x_neg_vec, y_pos_vec, y_neg_vec = (
-      hidden_space.vector_from_basis_direction(d) for d in hidden_directions)
+      hidden_space.vector_from_basis_direction(d) for d in hidden_directions
+  )
 
   def first_layer_action(
-      direction: bases.BasisDirection) -> bases.VectorInBasis:
+      direction: bases.BasisDirection,
+  ) -> bases.VectorInBasis:
     output = hidden_space.null_vector()
     if direction == input1_basis_direction:
       output += x_pos_vec - x_neg_vec
@@ -317,18 +346,21 @@ def linear_sequence_map_numerical_mlp(
       output += y_pos_vec - y_neg_vec
     return output
 
-  first_layer = vectorspace_fns.Linear.from_action(input_space, hidden_space,
-                                                   first_layer_action)
+  first_layer = vectorspace_fns.Linear.from_action(
+      input_space, hidden_space, first_layer_action
+  )
 
   def second_layer_action(
-      direction: bases.BasisDirection) -> bases.VectorInBasis:
+      direction: bases.BasisDirection,
+  ) -> bases.VectorInBasis:
     if direction.name == f"{hidden_name}x":
       return input1_factor * direction.value * out_vec
     if direction.name == f"{hidden_name}y":
       return input2_factor * direction.value * out_vec
     return output_space.null_vector()
 
-  second_layer = vectorspace_fns.Linear.from_action(hidden_space, output_space,
-                                                    second_layer_action)
+  second_layer = vectorspace_fns.Linear.from_action(
+      hidden_space, output_space, second_layer_action
+  )
 
   return transformers.MLP(first_layer, second_layer)

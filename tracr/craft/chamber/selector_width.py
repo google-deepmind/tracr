@@ -87,8 +87,8 @@ def selector_width(
       use_bos_for_default_output=False,
       softmax_coldness=softmax_coldness)
 
-  fun = lambda x: (1 / x) - 1
-  in_value_set = {1 / (x + 1) for x in out_value_set}
+  fun = lambda x: round((1 / x) - 1)
+  in_value_set = {1 / (out_v + 1) for out_v in out_value_set}
   if categorical_output:
     mlp = numerical_mlp.map_numerical_to_categorical_mlp(
         f=fun,
