@@ -144,7 +144,11 @@ class SelectorWidthTest(tests_common.VectorFnTestCase):
       )
     except AssertionError as e:
       if "output value mismatch" in str(e):
+        # assertion raised if there are inconsistency in the expected output
+        # values (likely due to floating point issues for long sequence length)
         self.fail(str(e))
+      else:
+        raise e
 
   @parameterized.product(
       causal=[False, True],
