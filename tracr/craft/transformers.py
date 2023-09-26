@@ -75,6 +75,7 @@ class AttentionHead(Block):
     assert self.w_ov.output_space.issubspace(self.residual_space)
 
   def apply(self, x: bases.VectorInBasis) -> bases.VectorInBasis:
+    assert self.residual_space is not None
     assert x in self.residual_space
     # seq_len x query_space
     queries = x.project(self.w_qk.left_space)
