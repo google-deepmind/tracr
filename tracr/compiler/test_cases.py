@@ -438,4 +438,16 @@ UNSUPPORTED_TEST_CASES = [
         vocab={1, 2, 3},
         max_seq_len=5,
     ),
+    dict(
+        testcase_name="numerical_selector",
+        program=rasp.SelectorWidth(
+            rasp.Select(
+                rasp.numerical(rasp.Map(lambda x: x, rasp.tokens)),
+                rasp.numerical(rasp.Map(lambda x: x, rasp.tokens)),
+                rasp.Comparison.LT,
+            )
+        ),
+        vocab={1, 2, 3},
+        max_seq_len=5,
+    ),
 ]

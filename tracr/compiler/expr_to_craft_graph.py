@@ -52,7 +52,7 @@ def _check_selector_expression(expr, graph):
 
   if (not rasp.is_categorical(sel_expr.queries) or
       not rasp.is_categorical(sel_expr.keys)):
-    raise ValueError("Selector keys and queries must be categorical.")
+    raise NotImplementedError("Selector keys and queries must be categorical.")
 
 
 def add_craft_components_to_rasp_graph(
