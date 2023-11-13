@@ -477,4 +477,16 @@ UNSUPPORTED_TEST_CASES = [
         vocab={1, 2, 3},
         max_seq_len=5,
     ),
+    dict(
+        testcase_name="numerical_tokens",
+        program=rasp.numerical(rasp.tokens),
+        vocab={1, 2, 3},
+        max_seq_len=5,
+    ),
+    dict(
+        testcase_name="numerical_indices",
+        program=rasp.numerical(rasp.indices),
+        vocab={1, 2, 3},
+        max_seq_len=5,
+    ),
 ]
