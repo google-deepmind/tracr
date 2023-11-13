@@ -75,99 +75,70 @@ class InferBasesTest(parameterized.TestCase):
         {2, 3, 4},
     )
 
-  def test_categorical_aggregate(self):
-    program = rasp.categorical(
-        rasp.Aggregate(
-            rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ),
-            rasp.indices,
-        )
-    )
-
+  @parameterized.named_parameters(
+      dict(
+          testcase_name="categorical_aggregate",
+          program=rasp.categorical(
+              rasp.Aggregate(
+                  rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ),
+                  rasp.indices,
+              )
+          ),
+          vocab={0, 1},
+          max_seq_len=3,
+          expected_value_set={0, 1, 2},
+      ),
+      dict(
+          testcase_name="numerical_aggregate",
+          program=rasp.numerical(
+              rasp.Aggregate(
+                  rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ),
+                  rasp.tokens,
+              )
+          ),
+          vocab={0, 1},
+          max_seq_len=2,
+          expected_value_set={0, 1, 1 / 2},
+      ),
+      dict(
+          testcase_name="selector_width",
+          program=rasp.SelectorWidth(
+              rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ)
+          ),
+          vocab={0, 1},
+          max_seq_len=3,
+          expected_value_set={0, 1, 2, 3},
+      ),
+      dict(
+          testcase_name="annotated_tokens",
+          program=rasp.categorical(rasp.tokens),
+          vocab={"a", "b"},
+          max_seq_len=2,
+          expected_value_set={"a", "b"},
+      ),
+      dict(
+          testcase_name="annotated_indices",
+          program=rasp.categorical(rasp.indices),
+          vocab={"a", "b"},
+          max_seq_len=2,
+          expected_value_set={0, 1},
+      ),
+  )
+  def test_inferred_value_set_as_expected(
+      self, program, vocab, max_seq_len, expected_value_set
+  ):
     extracted = rasp_to_graph.extract_rasp_graph(program)
 
     basis_inference.infer_bases(
         extracted.graph,
         extracted.sink,
-        {0, 1},
-        max_seq_len=3,
+        vocab,
+        max_seq_len=max_seq_len,
     )
 
     self.assertSetEqual(
         extracted.graph.nodes[program.label][nodes.VALUE_SET],
-        {0, 1, 2},
-    )
-
-  def test_numerical_aggregate(self):
-    program = rasp.numerical(
-        rasp.Aggregate(
-            rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ),
-            rasp.indices,
-        )
-    )
-
-    extracted = rasp_to_graph.extract_rasp_graph(program)
-
-    basis_inference.infer_bases(
-        extracted.graph,
-        extracted.sink,
-        {0, 1},
-        max_seq_len=2,
-    )
-
-    self.assertSetEqual(
-        extracted.graph.nodes[program.label][nodes.VALUE_SET],
-        {0, 1, 1 / 2},
-    )
-
-  def test_selector_width(self):
-    program = rasp.SelectorWidth(
-        rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ)
-    )
-
-    extracted = rasp_to_graph.extract_rasp_graph(program)
-
-    basis_inference.infer_bases(
-        extracted.graph,
-        extracted.sink,
-        {0, 1},
-        max_seq_len=2,
-    )
-
-    self.assertSetEqual(
-        extracted.graph.nodes[program.label][nodes.VALUE_SET],
-        {0, 1, 2},
-    )
-
-  def test_annotated_tokens(self):
-    program = rasp.categorical(rasp.tokens)
-    extracted = rasp_to_graph.extract_rasp_graph(program)
-
-    basis_inference.infer_bases(
-        extracted.graph,
-        extracted.sink,
-        {"a", "b"},
-        max_seq_len=2,
-    )
-
-    self.assertSetEqual(
-        extracted.graph.nodes[program.label][nodes.VALUE_SET],
-        {"a", "b"},
-    )
-
-  def test_annotated_indices(self):
-    program = rasp.categorical(rasp.indices)
-    extracted = rasp_to_graph.extract_rasp_graph(program)
-
-    basis_inference.infer_bases(
-        extracted.graph,
-        extracted.sink,
-        {"a", "b"},
-        max_seq_len=2,
-    )
-
-    self.assertSetEqual(
-        extracted.graph.nodes[program.label][nodes.VALUE_SET],
-        {0, 1},
+        expected_value_set,
     )
 
 
