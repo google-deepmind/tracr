@@ -391,3 +391,51 @@ CAUSAL_TEST_CASES = UNIVERSAL_TEST_CASES + [
         max_seq_len=5,
     ),
 ]
+
+
+# Programs using features that are currently not supported by Tracr
+UNSUPPORTED_TEST_CASES = [
+    dict(
+        testcase_name="numerical_categorical_aggregate",
+        program=rasp.Aggregate(
+            rasp.Select(rasp.tokens, rasp.tokens, rasp.Comparison.TRUE),
+            rasp.numerical(rasp.Map(lambda x: x, rasp.tokens)),
+        ),
+        vocab={1, 2, 3},
+        max_seq_len=5,
+    ),
+    dict(
+        testcase_name="categorical_numerical_aggregate",
+        program=rasp.numerical(
+            rasp.Aggregate(
+                rasp.Select(rasp.tokens, rasp.tokens, rasp.Comparison.TRUE),
+                rasp.tokens,
+            ),
+        ),
+        vocab={1, 2, 3},
+        max_seq_len=5,
+    ),
+    dict(
+        testcase_name="numerical_numerical_aggregate",
+        program=rasp.numerical(
+            rasp.Aggregate(
+                rasp.Select(rasp.tokens, rasp.tokens, rasp.Comparison.TRUE),
+                rasp.numerical(rasp.Map(lambda x: x, rasp.tokens)),
+            ),
+        ),
+        vocab={1, 2, 3},
+        max_seq_len=5,
+    ),
+    dict(
+        testcase_name="aggregate_with_not_None_default",
+        program=rasp.numerical(
+            rasp.Aggregate(
+                rasp.Select(rasp.indices, rasp.indices, rasp.Comparison.EQ),
+                rasp.tokens,
+                default=1
+            ),
+        ),
+        vocab={1, 2, 3},
+        max_seq_len=5,
+    ),
+]

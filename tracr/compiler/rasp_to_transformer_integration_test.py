@@ -126,6 +126,20 @@ class CompilerIntegrationTest(tests_common.VectorFnTestCase):
           test_output.decoded[1:], expected_output
       )
 
+  @parameterized.named_parameters(*test_cases.UNSUPPORTED_TEST_CASES)
+  def test_unsupported_programs_raise_exception(
+      self, program, vocab, max_seq_len
+  ):
+    with self.assertRaises(NotImplementedError):
+      compiling.compile_rasp_to_model(
+          program,
+          vocab,
+          max_seq_len,
+          causal=True,
+          compiler_bos=_COMPILER_BOS,
+          compiler_pad=_COMPILER_PAD,
+      )
+
   @parameterized.named_parameters(
       dict(
           testcase_name="reverse_1",

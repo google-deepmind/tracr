@@ -200,14 +200,21 @@ def add_craft_components_to_rasp_graph(
       _check_selector_expression(expr, graph)
       assert agg_expr.sop.label in graph.predecessors(node_id)
       if rasp.get_encoding(agg_expr.sop) != rasp.get_encoding(agg_expr):
-        raise ValueError(
-            "sop encoding must match output encoding of the aggregate.")
+        raise NotImplementedError(
+            "An Aggregate's output encoding must match the input encoding."
+            f" Input: {rasp.get_encoding(agg_expr.sop)},"
+            f" Output: {rasp.get_encoding(agg_expr)}"
+        )
       if rasp.is_categorical(agg_expr) and agg_expr.default is not None:
-        raise ValueError("Default for a categorical aggregate must be None. "
-                         f"Got {agg_expr.default}")
+        raise NotImplementedError(
+            "Default for a categorical aggregate must be None. "
+            f"Got {agg_expr.default}"
+        )
       if rasp.is_numerical(agg_expr) and agg_expr.default != 0:
-        raise ValueError("Default for a numerical aggregate must be 0. "
-                         f"Got {agg_expr.default}")
+        raise NotImplementedError(
+            "Default for a numerical aggregate must be 0. "
+            f"Got {agg_expr.default}"
+        )
 
       bos_space = bases.VectorSpaceWithBasis([bos_dir])
       one_space = bases.VectorSpaceWithBasis([one_dir])
