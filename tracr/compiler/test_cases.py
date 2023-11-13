@@ -393,7 +393,8 @@ CAUSAL_TEST_CASES = UNIVERSAL_TEST_CASES + [
 ]
 
 
-# Programs using features that are currently not supported by Tracr
+# Programs using features that are currently not supported by Tracr and that
+# cause the compiler to throw NotImplementerError.
 UNSUPPORTED_TEST_CASES = [
     dict(
         testcase_name="numerical_categorical_aggregate",
@@ -445,6 +446,31 @@ UNSUPPORTED_TEST_CASES = [
                 rasp.numerical(rasp.Map(lambda x: x, rasp.tokens)),
                 rasp.numerical(rasp.Map(lambda x: x, rasp.tokens)),
                 rasp.Comparison.LT,
+            )
+        ),
+        vocab={1, 2, 3},
+        max_seq_len=5,
+    ),
+    dict(
+        testcase_name="numerical_SequenceMap",
+        program=rasp.numerical(
+            rasp.SequenceMap(
+                lambda x, y: x + y,
+                rasp.numerical(rasp.Map(lambda x: x, rasp.indices)),
+                rasp.numerical(rasp.Map(lambda x: x, rasp.tokens)),
+            )
+        ),
+        vocab={1, 2, 3},
+        max_seq_len=5,
+    ),
+    dict(
+        testcase_name="categorical_LinearSequenceMap",
+        program=rasp.categorical(
+            rasp.LinearSequenceMap(
+                rasp.categorical(rasp.indices),
+                rasp.categorical(rasp.tokens),
+                1,
+                1,
             )
         ),
         vocab={1, 2, 3},
