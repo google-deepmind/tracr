@@ -18,7 +18,6 @@ from absl.testing import absltest
 from absl.testing import parameterized
 import jax
 import numpy as np
-
 from tracr.compiler import compiling
 from tracr.compiler import lib
 from tracr.compiler import test_cases
@@ -37,31 +36,39 @@ class CompilerIntegrationTest(tests_common.VectorFnTestCase):
   def assertSequenceEqualWhenExpectedIsNotNone(self, actual_seq, expected_seq):
     for actual, expected in zip(actual_seq, expected_seq):
       if expected is not None and actual != expected:
-        self.fail(f"{actual_seq} does not match (ignoring Nones) "
-                  f"expected_seq={expected_seq}")
+        self.fail(
+            f"{actual_seq} does not match (ignoring Nones) "
+            f"expected_seq={expected_seq}"
+        )
 
   @parameterized.named_parameters(
-      dict(
-          testcase_name="map",
-          program=rasp.Map(lambda x: x + 1, rasp.tokens)),
+      dict(testcase_name="map", program=rasp.Map(lambda x: x + 1, rasp.tokens)),
       dict(
           testcase_name="sequence_map",
-          program=rasp.SequenceMap(lambda x, y: x + y, rasp.tokens,
-                                   rasp.indices)),
+          program=rasp.SequenceMap(
+              lambda x, y: x + y, rasp.tokens, rasp.indices
+          ),
+      ),
       dict(
           testcase_name="sequence_map_with_same_input",
-          program=rasp.SequenceMap(lambda x, y: x + y, rasp.tokens,
-                                   rasp.indices)),
+          program=rasp.SequenceMap(
+              lambda x, y: x + y, rasp.tokens, rasp.indices
+          ),
+      ),
       dict(
           testcase_name="select_aggregate",
           program=rasp.Aggregate(
               rasp.Select(rasp.tokens, rasp.tokens, rasp.Comparison.EQ),
-              rasp.Map(lambda x: 1, rasp.tokens))))
+              rasp.Map(lambda x: 1, rasp.tokens),
+          ),
+      ),
+  )
   def test_rasp_program_and_transformer_produce_same_output(self, program):
     vocab = {0, 1, 2}
     max_seq_len = 3
     assembled_model = compiling.compile_rasp_to_model(
-        program, vocab, max_seq_len, compiler_bos=_COMPILER_BOS)
+        program, vocab, max_seq_len, compiler_bos=_COMPILER_BOS
+    )
 
     test_outputs = {}
     rasp_outputs = {}
@@ -77,24 +84,28 @@ class CompilerIntegrationTest(tests_common.VectorFnTestCase):
       self.assertEqual(test_outputs[2], rasp_outputs[2])
 
   @parameterized.named_parameters(*test_cases.TEST_CASES)
-  def test_compiled_models_produce_expected_output(self, program, vocab,
-                                                   test_input, expected_output,
-                                                   max_seq_len, **kwargs):
+  def test_compiled_models_produce_expected_output(
+      self, program, vocab, test_input, expected_output, max_seq_len, **kwargs
+  ):
     del kwargs
     assembled_model = compiling.compile_rasp_to_model(
-        program, vocab, max_seq_len, compiler_bos=_COMPILER_BOS)
+        program, vocab, max_seq_len, compiler_bos=_COMPILER_BOS
+    )
     test_output = assembled_model.apply([_COMPILER_BOS] + test_input)
 
     if isinstance(expected_output[0], (int, float)):
       np.testing.assert_allclose(
-          test_output.decoded[1:], expected_output, atol=1e-7, rtol=0.005)
+          test_output.decoded[1:], expected_output, atol=1e-7, rtol=0.005
+      )
     else:
-      self.assertSequenceEqualWhenExpectedIsNotNone(test_output.decoded[1:],
-                                                    expected_output)
+      self.assertSequenceEqualWhenExpectedIsNotNone(
+          test_output.decoded[1:], expected_output
+      )
 
   @parameterized.named_parameters(*test_cases.CAUSAL_TEST_CASES)
   def test_compiled_causal_models_produce_expected_output(
-      self, program, vocab, test_input, expected_output, max_seq_len, **kwargs):
+      self, program, vocab, test_input, expected_output, max_seq_len, **kwargs
+  ):
     del kwargs
     assembled_model = compiling.compile_rasp_to_model(
         program,
@@ -102,15 +113,18 @@ class CompilerIntegrationTest(tests_common.VectorFnTestCase):
         max_seq_len,
         causal=True,
         compiler_bos=_COMPILER_BOS,
-        compiler_pad=_COMPILER_PAD)
+        compiler_pad=_COMPILER_PAD,
+    )
     test_output = assembled_model.apply([_COMPILER_BOS] + test_input)
 
     if isinstance(expected_output[0], (int, float)):
       np.testing.assert_allclose(
-          test_output.decoded[1:], expected_output, atol=1e-7, rtol=0.005)
+          test_output.decoded[1:], expected_output, atol=1e-7, rtol=0.005
+      )
     else:
-      self.assertSequenceEqualWhenExpectedIsNotNone(test_output.decoded[1:],
-                                                    expected_output)
+      self.assertSequenceEqualWhenExpectedIsNotNone(
+          test_output.decoded[1:], expected_output
+      )
 
   @parameterized.named_parameters(
       dict(
@@ -119,93 +133,106 @@ class CompilerIntegrationTest(tests_common.VectorFnTestCase):
           vocab={"a", "b", "c", "d"},
           test_input=list("abcd"),
           expected_output=list("dcba"),
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
       dict(
           testcase_name="reverse_2",
           program=lib.make_reverse(rasp.tokens),
           vocab={"a", "b", "c", "d"},
           test_input=list("abc"),
           expected_output=list("cba"),
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
       dict(
           testcase_name="reverse_3",
           program=lib.make_reverse(rasp.tokens),
           vocab={"a", "b", "c", "d"},
           test_input=list("ad"),
           expected_output=list("da"),
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
       dict(
           testcase_name="reverse_4",
           program=lib.make_reverse(rasp.tokens),
           vocab={"a", "b", "c", "d"},
           test_input=["c"],
           expected_output=["c"],
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
       dict(
           testcase_name="length_categorical_1",
           program=rasp.categorical(lib.make_length()),
           vocab={"a", "b", "c", "d"},
           test_input=list("abc"),
           expected_output=[3, 3, 3],
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
       dict(
           testcase_name="length_categorical_2",
           program=rasp.categorical(lib.make_length()),
           vocab={"a", "b", "c", "d"},
           test_input=list("ad"),
           expected_output=[2, 2],
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
       dict(
           testcase_name="length_categorical_3",
           program=rasp.categorical(lib.make_length()),
           vocab={"a", "b", "c", "d"},
           test_input=["c"],
           expected_output=[1],
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
       dict(
           testcase_name="length_numerical_1",
           program=rasp.numerical(lib.make_length()),
           vocab={"a", "b", "c", "d"},
           test_input=list("abc"),
           expected_output=[3, 3, 3],
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
       dict(
           testcase_name="length_numerical_2",
           program=rasp.numerical(lib.make_length()),
           vocab={"a", "b", "c", "d"},
           test_input=list("ad"),
           expected_output=[2, 2],
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
       dict(
           testcase_name="length_numerical_3",
           program=rasp.numerical(lib.make_length()),
           vocab={"a", "b", "c", "d"},
           test_input=["c"],
           expected_output=[1],
-          max_seq_len=5),
+          max_seq_len=5,
+      ),
   )
   def test_compiled_models_produce_expected_output_with_padding(
-      self, program, vocab, test_input, expected_output, max_seq_len, **kwargs):
+      self, program, vocab, test_input, expected_output, max_seq_len, **kwargs
+  ):
     del kwargs
     assembled_model = compiling.compile_rasp_to_model(
         program,
         vocab,
         max_seq_len,
         compiler_bos=_COMPILER_BOS,
-        compiler_pad=_COMPILER_PAD)
+        compiler_pad=_COMPILER_PAD,
+    )
 
-    pad_len = (max_seq_len - len(test_input))
+    pad_len = max_seq_len - len(test_input)
     test_input = test_input + [_COMPILER_PAD] * pad_len
     test_input = [_COMPILER_BOS] + test_input
     test_output = assembled_model.apply(test_input)
     output = test_output.decoded
     output_len = len(output)
-    output_stripped = test_output.decoded[1:output_len - pad_len]
+    output_stripped = test_output.decoded[1 : output_len - pad_len]
 
     self.assertEqual(output[0], _COMPILER_BOS)
     if isinstance(expected_output[0], (int, float)):
       np.testing.assert_allclose(
-          output_stripped, expected_output, atol=1e-7, rtol=0.005)
+          output_stripped, expected_output, atol=1e-7, rtol=0.005
+      )
     else:
       self.assertEqual(output_stripped, expected_output)
 
