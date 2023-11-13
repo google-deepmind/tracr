@@ -39,6 +39,14 @@ def compile_rasp_to_model(
     mlp_exactness: int = 100) -> assemble.AssembledTransformerModel:
   """Compile a RASP program to transformer weights.
 
+  Note that currently not all RASP features are supported. Most unsupported
+  features are detected at compile time and will cause a NotImplementedError.
+  However, a few unsupported features cannot be checked at compile time and
+  can cause silent errors. 
+
+  See `compiler.validating` for details and a function to quickly check if
+  a program is compilable with Tracr without needing to compile it.
+
   Args:
     program: the RASP program to compile.
     vocab: the set of vocab tokens expected by RASP.
@@ -55,6 +63,10 @@ def compile_rasp_to_model(
 
   Returns:
     The compiled model.
+
+  Raises:
+    NotImplementedError: if the program uses unsopported features that can be
+      caught at compile time.
   """
 
   if compiler_bos in vocab:

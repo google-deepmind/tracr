@@ -422,6 +422,7 @@ UNSUPPORTED_TEST_CASES = [
             rasp.Aggregate(
                 rasp.Select(rasp.tokens, rasp.tokens, rasp.Comparison.TRUE),
                 rasp.numerical(rasp.Map(lambda x: x, rasp.tokens)),
+                default=0
             ),
         ),
         vocab={1, 2, 3},
