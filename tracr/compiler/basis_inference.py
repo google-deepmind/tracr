@@ -42,9 +42,9 @@ def infer_bases(
 
   def compute_value_set(sop: rasp.SOp) -> Set[rasp.Value]:
     """Computes value set using already-computed predecessor value sets."""
-    if sop is rasp.tokens:
+    if isinstance(sop, rasp.TokensType):
       return vocab
-    elif sop is rasp.indices:
+    elif isinstance(sop, rasp.IndicesType):
       return set(range(max_seq_len))
     elif isinstance(sop, rasp.SelectorWidth):
       return set(range(0, max_seq_len + 1))

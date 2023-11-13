@@ -80,7 +80,8 @@ class InferBasesTest(parameterized.TestCase):
         rasp.Aggregate(
             rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ),
             rasp.indices,
-        ))
+        )
+    )
 
     extracted = rasp_to_graph.extract_rasp_graph(program)
 
@@ -101,7 +102,8 @@ class InferBasesTest(parameterized.TestCase):
         rasp.Aggregate(
             rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ),
             rasp.indices,
-        ))
+        )
+    )
 
     extracted = rasp_to_graph.extract_rasp_graph(program)
 
@@ -119,7 +121,8 @@ class InferBasesTest(parameterized.TestCase):
 
   def test_selector_width(self):
     program = rasp.SelectorWidth(
-        rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ))
+        rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ)
+    )
 
     extracted = rasp_to_graph.extract_rasp_graph(program)
 
@@ -133,6 +136,38 @@ class InferBasesTest(parameterized.TestCase):
     self.assertSetEqual(
         extracted.graph.nodes[program.label][nodes.VALUE_SET],
         {0, 1, 2},
+    )
+
+  def test_annotated_tokens(self):
+    program = rasp.categorical(rasp.tokens)
+    extracted = rasp_to_graph.extract_rasp_graph(program)
+
+    basis_inference.infer_bases(
+        extracted.graph,
+        extracted.sink,
+        {"a", "b"},
+        max_seq_len=2,
+    )
+
+    self.assertSetEqual(
+        extracted.graph.nodes[program.label][nodes.VALUE_SET],
+        {"a", "b"},
+    )
+
+  def test_annotated_indices(self):
+    program = rasp.categorical(rasp.indices)
+    extracted = rasp_to_graph.extract_rasp_graph(program)
+
+    basis_inference.infer_bases(
+        extracted.graph,
+        extracted.sink,
+        {"a", "b"},
+        max_seq_len=2,
+    )
+
+    self.assertSetEqual(
+        extracted.graph.nodes[program.label][nodes.VALUE_SET],
+        {0, 1},
     )
 
 
