@@ -128,7 +128,7 @@ class DynamicValidationEvaluator(rasp.DefaultRASPEvaluator):
 
       agg_in = expr.sop(xs)
       sel_width = rasp.SelectorWidth(expr.selector)(xs)
-      sel_width_val = sel_width[0] if sel_width else 0
+      sel_width_val = max(sel_width) if sel_width else 0
 
       if (
           rasp.is_categorical(expr)

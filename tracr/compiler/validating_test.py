@@ -55,6 +55,14 @@ class ValidationEvaluatorTest(parameterized.TestCase):
           ),
           test_input=[1, 2, 3, 4],
       ),
+      dict(
+          testcase_name="prev_mean",
+          program=rasp.Aggregate(
+              rasp.Select(rasp.tokens, rasp.tokens, rasp.Comparison.LEQ),
+              rasp.tokens,
+          ),
+          test_input=[1, 2, 3, 4],
+      ),
   )
   def test_dynamic_failure_cases_fail_validation(
       self,
