@@ -390,6 +390,17 @@ CAUSAL_TEST_CASES = UNIVERSAL_TEST_CASES + [
         expected_output=[1, 2, 3, 4],
         max_seq_len=5,
     ),
+    
+    dict(
+        testcase_name="selector_width_long",
+        program=rasp.SelectorWidth(
+            rasp.Select(rasp.tokens, rasp.tokens, lambda key, query: key <= query).annotated(name="SE", encoding=rasp.Encoding.NUMERICAL)
+        ).annotated(name="SO", encoding=rasp.Encoding.CATEGORICAL),
+        vocab={'t0', 't1'},
+        test_input=['t0', 't0', 't0', 't1', 't1', 't0', 't0', 't1', 't1', 't0'],
+        expected_output=[6, 6, 6, 10, 10, 6, 6, 10, 10, 6],
+        max_seq_len=10,
+    ),
 ]
 
 
