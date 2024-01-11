@@ -155,6 +155,18 @@ class DynamicValidationEvaluator(rasp.DefaultRASPEvaluator):
             )
         )
 
+    elif isinstance(expr, rasp.Map):
+      if not all(x >= 0 for x in out):
+        self.unsupported_exprs.append(
+          TracrUnsupportedExpr(
+                expr=expr,
+                reason=(
+                    "Map only supports positive outputs due to the ReLU activation"
+                    f" got {set(out)}."
+                ),
+          )
+        )
+    
     return out
 
 
