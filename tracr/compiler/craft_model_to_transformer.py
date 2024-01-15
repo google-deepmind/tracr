@@ -35,11 +35,6 @@ def craft_model_to_transformer(
   """Turn a craft model into a transformer model."""
 
   # Add the compiler BOS token.
-  if rasp.tokens.label not in graph.nodes:
-    raise ValueError(f"Failed to find a node with label {rasp.tokens.label}. "
-                     "This is probably because the RASP program does not contain rasp.tokens. "
-                     "A program must contain rasp.tokens to be compilable.")
-
   tokens_value_set = (
       graph.nodes[rasp.tokens.label][nodes.VALUE_SET].union(
           {compiler_bos, compiler_pad}))
