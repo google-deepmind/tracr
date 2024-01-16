@@ -932,16 +932,16 @@ def _get_selected(
 
 
 def _mean(xs: Sequence[VT], default: VT) -> VT:
-  """Takes the mean for numbers and concats for strings."""
+  """Takes the mean for numbers."""
   if not xs:
     return default
-  exemplar = xs[0]
-  if isinstance(exemplar, (int, bool)):
-    return sum(xs) / len(xs)
   elif len(xs) == 1:
-    return exemplar
+    return xs[0]
+  elif all(isinstance(x, (int, bool, float)) for x in xs):
+    return sum(xs) / len(xs)
   else:
-    raise ValueError(f"Unsupported type for aggregation: {xs}")
+    raise ValueError(f"Only types int, bool, and float are supported for aggregation. "
+                     f"Received sequence: {xs}")
 
 
 def _raise_not_implemented(expr: RASPExpr, xs: Sequence[Value]):

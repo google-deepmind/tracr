@@ -127,13 +127,9 @@ class DynamicValidationEvaluator(rasp.DefaultRASPEvaluator):
       # a way to do this statically so we have to check this at runtime.
 
       agg_in = expr.sop(xs)
-      sel_width = rasp.SelectorWidth(expr.selector)(xs)
-      sel_width_val = max(sel_width) if sel_width else 0
-
       if (
-          rasp.is_categorical(expr)
-          and sel_width_val > 1
-          and set(agg_in) != set(out)
+          # The easiest way to satisfy this is to have a selector of width 1
+          rasp.is_categorical(expr) and not set(out).issubset(set(agg_in) | {None})
       ):
         self.unsupported_exprs.append(
             TracrUnsupportedExpr(
