@@ -89,7 +89,7 @@ class _Annotations(collections.abc.Mapping):
       if key not in DEFAULT_ANNOTATORS:
         raise KeyError(
             f"No annotation exists for key '{key}'. "
-            f"Available keys: {list(*self.keys(), *DEFAULT_ANNOTATORS.keys())}")
+            f"Available keys: {set(self.keys()) | set(DEFAULT_ANNOTATORS.keys())}")
       self._inner_dict[key] = DEFAULT_ANNOTATORS[key](self._expr)
 
     return self._inner_dict[key]
