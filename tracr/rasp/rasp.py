@@ -377,7 +377,7 @@ class SequenceMap(SOp):
   ):
     super().__init__()
 
-    if fst == snd:
+    if fst is snd:
       logging.warning("Creating a SequenceMap with both inputs being the same "
                       "SOp is discouraged. You should use a Map instead.")
 
