@@ -57,7 +57,7 @@ def infer_bases(
         res = errors.ignoring_arithmetic_errors(sop.f)(x)
         if res is not None:
           out.add(res)
-      if not all(x >= 0 for x in out):
+      if rasp.is_numerical(sop) and (not all(x >= 0 for x in out)):
         raise ValueError(f"Map does not support negative outputs due to the ReLU activation\noutputs: {out}\nsop: {sop}")
       return out
     elif isinstance(sop, rasp.SequenceMap):

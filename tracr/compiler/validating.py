@@ -156,7 +156,7 @@ class DynamicValidationEvaluator(rasp.DefaultRASPEvaluator):
         )
 
     elif isinstance(expr, rasp.Map):
-      if not all(x >= 0 for x in out):
+      if rasp.is_numerical(expr) and (not all(x >= 0 for x in out)):
         self.unsupported_exprs.append(
           TracrUnsupportedExpr(
                 expr=expr,
