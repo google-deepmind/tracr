@@ -345,6 +345,43 @@ TEST_CASES = UNIVERSAL_TEST_CASES + [
 
 # make_nary_sequencemap(f, *sops)
 
+def make_ov_test_case_1():
+        so2 = rasp.Map(lambda x: x - 2, rasp.indices)
+        so4 = rasp.SequenceMap(lambda x,y: x or y, so2, rasp.indices)
+        so1 = rasp.Map(lambda x: x > 1, rasp.tokens)
+        so3 = rasp.Map(lambda x: x < False, so1)
+        se1 = rasp.Select(so3, so3, rasp.Comparison.LEQ)
+        so6 = rasp.Aggregate(se1, so4)
+        return so6
+
+def make_ov_test_case_2():
+    se1 = rasp.Select(rasp.indices, rasp.indices, lambda x, y: x == y)
+    so2 = rasp.Aggregate(se1, rasp.indices)
+    se2 = rasp.Select(rasp.tokens, rasp.tokens, lambda x, y: x < y)
+    so3 = rasp.SelectorWidth(se2)
+    se3 = rasp.Select(so3, so2, lambda x, y: x!=y)
+    so6 = rasp.SequenceMap(lambda x,y: x-y, so3, so3)
+    so7 = rasp.Aggregate(se3, so6)
+    return so7
+
+TEST_CASES += [
+    dict(
+        testcase_name="ov_test_case_1",
+        program=make_ov_test_case_1(),
+        vocab={0, 1, 2, 3, 4, 5, 6, 7, 8},
+        test_input=[0],
+        expected_output=[1, 2, 3, 4],
+        max_seq_len=6),
+    dict(
+        testcase_name="ov_test_case_2",
+        program=make_ov_test_case_2(),
+        vocab={0, 1, 2, 3, 4, 5, 6, 7, 8},
+        test_input=[1,3],
+        expected_output=[0,0],
+        max_seq_len=6),
+]
+
+
 CAUSAL_TEST_CASES = UNIVERSAL_TEST_CASES + [
     dict(
         testcase_name="selector_width",
@@ -355,3 +392,6 @@ CAUSAL_TEST_CASES = UNIVERSAL_TEST_CASES + [
         expected_output=[1, 2, 3, 4],
         max_seq_len=5),
 ]
+
+
+
