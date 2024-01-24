@@ -171,7 +171,19 @@ class VectorInBasis:
       else:
         components.append(np.zeros_like(self.magnitudes[..., 0]))
     return VectorInBasis(list(basis), np.stack(components, axis=-1), basis_is_sorted=True)
-
+  
+  def add_directions(self, vector: "VectorInBasis") -> "VectorInBasis":
+    """
+    Equivalent to self += vector.project(self.basis)
+    This is to speed up accumulation into an output vector in the combine_in_parallel in vectorspace_fns
+    """
+    directions_indices = self.get_direction_to_index()
+    assert len(vector.basis_directions) == vector.magnitudes.shape[-1]
+    new_magnitudes = np.array(self.magnitudes)
+    for idx, basis in enumerate(vector.basis_directions):
+      new_magnitudes[..., directions_indices[basis]] += vector.magnitudes[..., idx]
+    return VectorInBasis(list(self.basis_directions), new_magnitudes, basis_is_sorted=True)
+  
 
 @dataclasses.dataclass
 class VectorSpaceWithBasis:

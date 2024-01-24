@@ -103,7 +103,8 @@ class Linear(VectorFunction):
       for fn in fns:
         if x in fn.input_space:
           x_vec = fn.input_space.vector_from_basis_direction(x)
-          out += fn(x_vec).project(joint_output_space)
+          applied = fn(x_vec)
+          out = out.add_directions(applied)
       return out
 
     return cls.from_action(joint_input_space, joint_output_space, action)
