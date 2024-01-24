@@ -51,9 +51,7 @@ class BasisDirection:
   
   @property
   def hash_value(self):
-      if not hasattr(self, '_hash_value'):
-          self._hash_value = hash((self.name, self.value))
-      return self._hash_value
+    return hash((self.name, self.value))
   
   def __eq__(self, other):
     return (self.name, self.value) == (other.name, other.value)
