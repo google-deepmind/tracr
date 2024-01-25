@@ -102,7 +102,7 @@ class VectorInBasis:
     if self.basis_directions != other.basis_directions:
       raise TypeError(f"Adding incompatible bases: {self} + {other}")
     magnitudes = self.magnitudes + other.magnitudes
-    return VectorInBasis(self.basis_directions, magnitudes, basis_is_sorted=True)
+    return self.update_magnitudes(magnitudes)
 
   def __radd__(self, other: "VectorInBasis") -> "VectorInBasis":
     if self.basis_directions != other.basis_directions:
@@ -113,22 +113,22 @@ class VectorInBasis:
     if self.basis_directions != other.basis_directions:
       raise TypeError(f"Subtracting incompatible bases: {self} - {other}")
     magnitudes = self.magnitudes - other.magnitudes
-    return VectorInBasis(self.basis_directions, magnitudes, basis_is_sorted=True)
+    return self.update_magnitudes( magnitudes)
 
   def __rsub__(self, other: "VectorInBasis") -> "VectorInBasis":
     if self.basis_directions != other.basis_directions:
       raise TypeError(f"Subtracting incompatible bases: {other} - {self}")
     magnitudes = other.magnitudes - self.magnitudes
-    return VectorInBasis(self.basis_directions, magnitudes, basis_is_sorted=True)
+    return self.update_magnitudes(magnitudes)
 
   def __mul__(self, scalar: float) -> "VectorInBasis":
-    return VectorInBasis(self.basis_directions, self.magnitudes * scalar, basis_is_sorted=True)
+    return self.update_magnitudes(self.magnitudes * scalar)
 
   def __rmul__(self, scalar: float) -> "VectorInBasis":
     return self * scalar
 
   def __truediv__(self, scalar: float) -> "VectorInBasis":
-    return VectorInBasis(self.basis_directions, self.magnitudes / scalar, basis_is_sorted=True)
+    return self.update_magnitudes(self.magnitudes / scalar)
 
   def __neg__(self) -> "VectorInBasis":
     return (-1) * self
@@ -140,8 +140,8 @@ class VectorInBasis:
 
   @classmethod
   def sum(cls, vectors: Sequence["VectorInBasis"]) -> "VectorInBasis":
-    return cls(vectors[0].basis_directions,
-               np.sum([x.magnitudes for x in vectors], axis=0), sorted=True)
+    return vectors[0].update_magnitudes(
+               np.sum([x.magnitudes for x in vectors], axis=0))
 
   @classmethod
   def stack(cls,
@@ -150,8 +150,8 @@ class VectorInBasis:
     for v in vectors[1:]:
       if v.basis_directions != vectors[0].basis_directions:
         raise TypeError(f"Stacking incompatible bases: {vectors[0]} + {v}")
-    return cls(vectors[0].basis_directions,
-               np.stack([v.magnitudes for v in vectors], axis=axis), sorted=True)
+    return vectors[0].update_magnitudes(
+               np.stack([v.magnitudes for v in vectors], axis=axis))
 
   def project(
       self, basis: Union["VectorSpaceWithBasis", Sequence[BasisDirection]]
@@ -168,7 +168,11 @@ class VectorInBasis:
             self.magnitudes[..., direction_to_index[direction]])
       else:
         components.append(np.zeros_like(self.magnitudes[..., 0]))
-    return VectorInBasis(list(basis), np.stack(components, axis=-1), basis_is_sorted=True)
+    
+    if isinstance(basis, VectorSpaceWithBasis): # we can save compute and construct the vector in basis from the vector space
+      return basis.to_vector_in_basis(np.stack(components, axis=-1))
+    else: # otherwise construct one from scratch, we may have to build the set and index dict if requested
+      return VectorInBasis(list(basis), np.stack(components, axis=-1), basis_is_sorted=True)
   
   def add_directions(self, vector: "VectorInBasis") -> "VectorInBasis":
     """
@@ -176,13 +180,18 @@ class VectorInBasis:
     This is to speed up accumulation into an output vector in the combine_in_parallel in vectorspace_fns
     """
     directions_indices = self.get_direction_to_index()
-    assert len(vector.basis_directions) == vector.magnitudes.shape[-1]
     new_magnitudes = np.array(self.magnitudes)
     for idx, basis in enumerate(vector.basis_directions):
       new_magnitudes[..., directions_indices[basis]] += vector.magnitudes[..., idx]
-    return VectorInBasis(list(self.basis_directions), new_magnitudes, basis_is_sorted=True)
+    return self.update_magnitudes(new_magnitudes)
   
-
+  def update_magnitudes(self, new_magnitudes):
+    vect = VectorInBasis(list(self.basis_directions), new_magnitudes, basis_is_sorted=True)
+    if hasattr(self, 'basis_set'):
+      vect.basis_set = self.basis_set
+    if hasattr(self, 'direction_to_index'):
+      vect.direction_to_index = self.direction_to_index
+    return vect
 @dataclasses.dataclass
 class VectorSpaceWithBasis:
   """A vector subspace in a given basis."""
@@ -191,7 +200,15 @@ class VectorSpaceWithBasis:
   def __post_init__(self):
     """Keep basis directions sorted."""
     self.basis = sorted(self.basis)
-
+    
+  def to_vector_in_basis(self, magnitudes):
+    vect = VectorInBasis(list(self.basis), magnitudes=magnitudes, basis_is_sorted=True)
+    if hasattr(self, 'basis_set'):
+      vect.basis_set = self.basis_set
+    if hasattr(self, 'direction_to_index'):
+      vect.direction_to_index = self.direction_to_index
+    return vect
+    
   @property
   def num_dims(self) -> int:
     return len(self.basis)
@@ -202,6 +219,13 @@ class VectorSpaceWithBasis:
     else:
       self.basis_set = set(self.basis)
       return self.basis_set
+  
+  def get_direction_to_index(self):
+    if hasattr(self, 'direction_to_index'):
+      return self.direction_to_index
+    else:
+      self.direction_to_index = {direction: index for index, direction in enumerate(self.basis)}
+      return self.direction_to_index
 
   def __contains__(self, item: Union[VectorInBasis, BasisDirection]) -> bool:
     if isinstance(item, BasisDirection):
@@ -214,15 +238,15 @@ class VectorSpaceWithBasis:
 
   def basis_vectors(self) -> Sequence[VectorInBasis]:
     basis_vector_magnitudes = list(np.eye(self.num_dims))
-    return [VectorInBasis(self.basis, m, basis_is_sorted=True) for m in basis_vector_magnitudes]
+    return [self.to_vector_in_basis(m) for m in basis_vector_magnitudes]
 
   def vector_from_basis_direction(
       self, basis_direction: BasisDirection) -> VectorInBasis:
-    i = self.basis.index(basis_direction)
-    return VectorInBasis(self.basis, np.eye(self.num_dims)[i], basis_is_sorted=True)
+    i = self.get_direction_to_index()[basis_direction]
+    return self.to_vector_in_basis(np.eye(self.num_dims)[i])
 
   def null_vector(self) -> VectorInBasis:
-    return VectorInBasis(self.basis, np.zeros(self.num_dims), basis_is_sorted=True)
+    return self.to_vector_in_basis(np.zeros(self.num_dims))
 
   @classmethod
   def from_names(cls, names: Sequence[Name]) -> "VectorSpaceWithBasis":
