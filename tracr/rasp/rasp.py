@@ -157,10 +157,9 @@ class RASPExpr(abc.ABC):
 
 def annotate(expr: RASPExprT, **annotations) -> RASPExprT:
   """Creates a new expr with added annotations."""
-  new = expr.copy()
   # Note that new annotations will overwrite existing ones with matching keys.
-  new.annotations = {**expr.annotations, **annotations}
-  return new
+  expr.annotations = {**expr.annotations, **annotations}
+  return expr
 
 
 ### S-Ops.
