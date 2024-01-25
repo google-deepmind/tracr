@@ -75,7 +75,16 @@ class ExprToCraftGraphTest(parameterized.TestCase):
               rasp.tokens,
           )),
       dict(testcase_name="reverse", program=lib.make_reverse(rasp.tokens)),
-      dict(testcase_name="length", program=lib.make_length()))
+      dict(testcase_name="length", program=lib.make_length()),
+      dict(
+        testcase_name="annotated_tokens", 
+        program=rasp.annotate(rasp.tokens, foo="foo"),
+      ),
+      dict(
+        testcase_name="annotated_indices", 
+        program=rasp.annotate(rasp.indices, foo="foo"),
+      ),
+  )
   def test_compiling_rasp_programs(self, program):
     vocab = {0, 1, 2}
     extracted = rasp_to_graph.extract_rasp_graph(program)

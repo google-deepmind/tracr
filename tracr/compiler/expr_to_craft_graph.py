@@ -92,7 +92,7 @@ def add_craft_components_to_rasp_graph(
       raise ValueError(
           "Craft components can only be added after basis inference.")
 
-    if expr is rasp.tokens or expr is rasp.indices:
+    if isinstance(expr, (rasp.TokensType, rasp.IndicesType)):
       block = None
     elif isinstance(expr, rasp.Map):
       inner_expr, inner_node = expr.inner, graph.nodes[expr.inner.label]
