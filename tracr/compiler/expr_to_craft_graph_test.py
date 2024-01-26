@@ -63,19 +63,32 @@ class ExprToCraftGraphTest(parameterized.TestCase):
   @parameterized.named_parameters(
       dict(
           testcase_name="single_map",
-          program=rasp.Map(lambda x: x + 1, rasp.tokens)),
+          program=rasp.Map(lambda x: x + 1, rasp.tokens),
+      ),
       dict(
           testcase_name="single_sequence_map",
-          program=rasp.SequenceMap(lambda x, y: x + y, rasp.tokens,
-                                   rasp.indices)),
+          program=rasp.SequenceMap(
+              lambda x, y: x + y, rasp.tokens, rasp.indices
+          ),
+      ),
       dict(
           testcase_name="single_select_aggregate",
           program=rasp.Aggregate(
               rasp.Select(rasp.tokens, rasp.indices, rasp.Comparison.EQ),
               rasp.tokens,
-          )),
+          ),
+      ),
       dict(testcase_name="reverse", program=lib.make_reverse(rasp.tokens)),
-      dict(testcase_name="length", program=lib.make_length()))
+      dict(testcase_name="length", program=lib.make_length()),
+      dict(
+          testcase_name="annotated_tokens",
+          program=rasp.annotate(rasp.tokens, foo="foo"),
+      ),
+      dict(
+          testcase_name="annotated_indices",
+          program=rasp.annotate(rasp.indices, foo="foo"),
+      ),
+  )
   def test_compiling_rasp_programs(self, program):
     vocab = {0, 1, 2}
     extracted = rasp_to_graph.extract_rasp_graph(program)
