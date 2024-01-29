@@ -49,14 +49,11 @@ class BasisDirection:
     except TypeError:
       return str(self) < str(other)
   
-  @property
   def hash_value(self):
     return hash((self.name, self.value))
   
   def __eq__(self, other):
     return (self.name, self.value) == (other.name, other.value)
-    
-
 
 @dataclasses.dataclass
 class VectorInBasis:
@@ -65,10 +62,16 @@ class VectorInBasis:
   When magnitudes are 1-d, this is a vector.
   When magnitudes are (n+1)-d, this is an array of vectors,
   where the -1th dimension is the basis dimension.
+  
+  basis_is_sorted should remain False unless the basis is known to be ordered
+  _basis_set should be left None
+  _direction_to_index should be left None
   """
   basis_directions: Sequence[BasisDirection]
   magnitudes: np.ndarray
   basis_is_sorted: bool = False
+  _basis_set: Optional[set] = None
+  _direction_to_index: Optional[dict] = None
 
   def __post_init__(self):
     """Sort basis directions."""
@@ -85,18 +88,18 @@ class VectorInBasis:
       self.basis_is_sorted = True
 
   def get_basis_set(self):
-    if hasattr(self, 'basis_set'):
-      return self.basis_set
+    if self._basis_set is not None:
+      return self._basis_set
     else:
-      self.basis_set = set(self.basis_directions)
-      return self.basis_set
+      self._basis_set = set(self.basis_directions)
+      return self._basis_set
   
   def get_direction_to_index(self):
-    if hasattr(self, 'direction_to_index'):
-      return self.direction_to_index
+    if self._direction_to_index is not None:
+      return self._direction_to_index
     else:
-      self.direction_to_index = {direction: index for index, direction in enumerate(self.basis_directions)}
-      return self.direction_to_index
+      self._direction_to_index = {direction: index for index, direction in enumerate(self.basis_directions)}
+      return self._direction_to_index
 
   def __add__(self, other: "VectorInBasis") -> "VectorInBasis":
     if self.basis_directions != other.basis_directions:
@@ -160,6 +163,7 @@ class VectorInBasis:
     if isinstance(basis, VectorSpaceWithBasis):
       basis = basis.basis
     components = []
+    # use a set for lookups, greatly improves performance
     basis_set = self.get_basis_set()
     direction_to_index = self.get_direction_to_index()
     for direction in basis:
@@ -187,15 +191,19 @@ class VectorInBasis:
   
   def update_magnitudes(self, new_magnitudes):
     vect = VectorInBasis(list(self.basis_directions), new_magnitudes, basis_is_sorted=True)
-    if hasattr(self, 'basis_set'):
-      vect.basis_set = self.basis_set
-    if hasattr(self, 'direction_to_index'):
-      vect.direction_to_index = self.direction_to_index
+    vect._basis_set = self._basis_set
+    vect._direction_to_index = self._direction_to_index
     return vect
+  
 @dataclasses.dataclass
 class VectorSpaceWithBasis:
-  """A vector subspace in a given basis."""
+  """A vector subspace in a given basis.
+  
+  _basis_set and _direction_to_index should be left None
+  """
   basis: Sequence[BasisDirection]
+  _basis_set: Optional[set] = None
+  _direction_to_index: Optional[dict] = None
 
   def __post_init__(self):
     """Keep basis directions sorted."""
@@ -203,10 +211,8 @@ class VectorSpaceWithBasis:
     
   def to_vector_in_basis(self, magnitudes):
     vect = VectorInBasis(list(self.basis), magnitudes=magnitudes, basis_is_sorted=True)
-    if hasattr(self, 'basis_set'):
-      vect.basis_set = self.basis_set
-    if hasattr(self, 'direction_to_index'):
-      vect.direction_to_index = self.direction_to_index
+    vect._basis_set = self._basis_set
+    vect._direction_to_index = self._direction_to_index
     return vect
     
   @property
@@ -214,18 +220,18 @@ class VectorSpaceWithBasis:
     return len(self.basis)
   
   def get_basis_set(self):
-    if hasattr(self, 'basis_set'):
-      return self.basis_set
+    if self._basis_set is not None:
+      return self._basis_set
     else:
-      self.basis_set = set(self.basis)
-      return self.basis_set
+      self._basis_set = set(self.basis)
+      return self._basis_set
   
   def get_direction_to_index(self):
-    if hasattr(self, 'direction_to_index'):
-      return self.direction_to_index
+    if self._direction_to_index is not None:
+      return self._direction_to_index
     else:
-      self.direction_to_index = {direction: index for index, direction in enumerate(self.basis)}
-      return self.direction_to_index
+      self._direction_to_index = {direction: index for index, direction in enumerate(self.basis)}
+      return self._direction_to_index
 
   def __contains__(self, item: Union[VectorInBasis, BasisDirection]) -> bool:
     if isinstance(item, BasisDirection):
