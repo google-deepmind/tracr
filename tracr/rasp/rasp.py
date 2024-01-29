@@ -34,7 +34,6 @@ For a full reference on RASP, see https://arxiv.org/abs/2106.06981.
 
 import abc
 import collections.abc
-import copy
 import enum
 import functools
 import itertools
@@ -138,10 +137,6 @@ class RASPExpr(abc.ABC):
     """A unique id for every expression instance."""
     return next(self._ids)
 
-  def copy(self: RASPExprT) -> RASPExprT:
-    """Returns a shallow copy of this RASPExpr with a new ID."""
-    return copy.copy(self)
-
   @property
   def label(self) -> str:
     return f"{self.name}_{self.unique_id}"
@@ -156,7 +151,7 @@ class RASPExpr(abc.ABC):
 
 
 def annotate(expr: RASPExprT, **annotations) -> RASPExprT:
-  """Creates a new expr with added annotations."""
+  """Adds annotations to an expression"""
   # Note that new annotations will overwrite existing ones with matching keys.
   expr.annotations = {**expr.annotations, **annotations}
   return expr
