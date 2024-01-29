@@ -27,24 +27,27 @@ Node = nodes.Node
 NodeID = nodes.NodeID
 
 
-def compute_computational_depth(graph, sources):
-    computational_depth = {}
+def compute_computational_depth(graph: nx.DiGraph, sources: Node):
+  """returns the computational depth of each node in the graph,
+  selector nodes have reduced depth"""
+  computational_depth = {}
 
-    def dfs(node, depth):
-        if isinstance(graph.nodes[node][nodes.EXPR], rasp.Select):
-          depth = depth - 1
-        if node in computational_depth:
-            computational_depth[node] = max(depth, computational_depth[node])
-        else:
-          computational_depth[node] = depth
+  def dfs(node, depth):
+    if node in computational_depth:
+      computational_depth[node] = max(depth, computational_depth[node])
+    else:
+      computational_depth[node] = depth
 
-        for successor in graph.successors(node):
-          dfs(successor, depth + 1)
+    for successor in graph.successors(node):
+      if not isinstance(graph.nodes[successor][nodes.EXPR], rasp.SOp):
+        dfs(successor, depth)
+      else:
+        dfs(successor, depth + 1)
 
-    for source in sources:
-        dfs(source, depth=0)
+  for source in sources:
+    dfs(source, depth=0)
 
-    return computational_depth
+  return computational_depth
 
 
 def _node_is_attn(node: Node) -> bool:
@@ -117,7 +120,7 @@ def _allocate_modules_to_layers(graph: nx.DiGraph,
   layer_allocation: Dict[int, int] = collections.defaultdict(lambda: -1)
   depth_by_node_id: Dict[int, int] = dict()
   nodes_by_depth: Dict[int, List[Node]] = collections.defaultdict(list)
-  computational_depth = compute_computational_depth(graph, [src['ID'] for src in sources])
+  computational_depth = compute_computational_depth(graph, [src[nodes.ID] for src in sources])
   for node_id, node in graph.nodes.items():
     if (_node_is_mlp(node) or _node_is_attn(node)
         or _node_is_residual_block(node)):
