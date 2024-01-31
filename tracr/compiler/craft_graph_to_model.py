@@ -27,25 +27,42 @@ Node = nodes.Node
 NodeID = nodes.NodeID
 
 
-def compute_computational_depth(graph: nx.DiGraph, sources: Node):
-  """returns the computational depth of each node in the graph,
-  selector nodes have reduced depth"""
+def compute_computational_depth(graph: nx.DiGraph, sources_ids: Sequence[int]) -> Dict[int, int]:
+  """Returns the computational depth of each node in the graph.
+  
+  Given any number of source nodes will trace the maximum computational depth
+    from all of these source nodes to every node in the graph.
+  Selector nodes have reduced depth
+  Disconnected nodes will have depth -1
+  
+  Args:
+    graph: RASP computational graph where all nodes are annotated with
+          # EXPR attributes set to rasp primitives
+    sources: Sequence of integers to measure computational depth against
+  
+  Returns:
+    a dictionary mapping all graph nodes to a computational depth"""
   computational_depth = {}
 
-  def dfs(node, depth):
-    if node in computational_depth:
-      computational_depth[node] = max(depth, computational_depth[node])
+  def dfs(node_id, depth):
+    if node_id in computational_depth:
+      computational_depth[node_id] = max(depth, computational_depth[node_id])
     else:
-      computational_depth[node] = depth
+      computational_depth[node_id] = depth
 
-    for successor in graph.successors(node):
+    for successor in graph.successors(node_id):
       if not isinstance(graph.nodes[successor][nodes.EXPR], rasp.SOp):
         dfs(successor, depth)
       else:
         dfs(successor, depth + 1)
 
-  for source in sources:
-    dfs(source, depth=0)
+  for source_id in sources_ids:
+    dfs(source_id, depth=0)
+  
+  # ensure any disconnected nodes are given a depth -1
+  disconnected_nodes = set(graph.nodes) - set(computational_depth.keys())
+  for disconnected_node in disconnected_nodes:
+    computational_depth[disconnected_node] = -1
 
   return computational_depth
 
