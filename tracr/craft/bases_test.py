@@ -77,7 +77,15 @@ class VectorInBasisTest(tests_common.VectorFnTestCase):
     minus_v = bases.VectorInBasis(vs1.basis, np.array([0, -1, -2]))
     self.assertEqual(-v, minus_v)
 
-
+  def test_add_directions(self):
+    vs1 = bases.VectorSpaceWithBasis.from_names(["a", "b", "c"])
+    expected =  bases.VectorInBasis(vs1.basis, np.array([3,4,5]))
+    v = bases.VectorInBasis(vs1.basis, np.array([0, 1, 2]))
+    three = bases.VectorInBasis(vs1.basis, np.array([3, 3, 3]))
+    shifted = v.add_directions(three)
+    self.assertEqual(shifted, expected)
+    
+    
 class ProjectionTest(tests_common.VectorFnTestCase):
 
   def test_direct_sum_produces_expected_result(self):

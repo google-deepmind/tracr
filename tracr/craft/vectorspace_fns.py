@@ -66,7 +66,7 @@ class Linear(VectorFunction):
   def __call__(self, x: VectorInBasis) -> VectorInBasis:
     if x not in self.input_space:
       raise TypeError(f"x={x} not in self.input_space={self.input_space}.")
-    return self.output_space.to_vector_in_basis(x.magnitudes @ self.matrix)
+    return self.output_space.make_vector(x.magnitudes @ self.matrix)
 
   @classmethod
   def from_action(
@@ -96,8 +96,8 @@ class Linear(VectorFunction):
         *[fn.output_space for fn in fns])
     
     # precompute properties for these parents to avoid recomputing for every single child
-    joint_input_space.get_direction_to_index()
-    joint_output_space.get_direction_to_index()
+    joint_input_space.direction_to_index
+    joint_output_space.direction_to_index
 
     def action(x: bases.BasisDirection) -> bases.VectorInBasis:
       out = joint_output_space.null_vector()

@@ -143,13 +143,13 @@ def sequence_map_categorical_mlp(
       dir1 = direction
       out = hidden_space.null_vector()
       for dir2 in input2_space.basis:
-        vector = bases.VectorInBasis([to_hidden(dir1, dir2)], np.array([1]), basis_is_sorted=True)
+        vector = bases.VectorInBasis([to_hidden(dir1, dir2)], np.array([1]), _basis_is_sorted=True)
         out = out.add_directions(vector)
     else:
       dir2 = direction
       out = hidden_space.null_vector()
       for dir1 in input1_space.basis:
-        vector = bases.VectorInBasis([to_hidden(dir1, dir2)], np.array([1]), basis_is_sorted=True)
+        vector = bases.VectorInBasis([to_hidden(dir1, dir2)], np.array([1]), _basis_is_sorted=True)
         out = out.add_directions(vector)
     return out
 

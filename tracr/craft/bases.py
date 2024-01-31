@@ -15,7 +15,8 @@
 """Vectors and bases."""
 
 import dataclasses
-from typing import Sequence, Union, Optional, Iterable, Tuple
+from typing import Sequence, Union, Optional, Iterable, Set, Dict
+from functools import cached_property
 
 import numpy as np
 
@@ -49,9 +50,6 @@ class BasisDirection:
     except TypeError:
       return str(self) < str(other)
   
-  def hash_value(self):
-    return hash((self.name, self.value))
-  
   def __eq__(self, other):
     return (self.name, self.value) == (other.name, other.value)
 
@@ -64,15 +62,10 @@ class VectorInBasis:
   where the -1th dimension is the basis dimension.
   
   basis_is_sorted should remain False unless the basis is known to be ordered
-  _basis_set should be left None
-  _direction_to_index should be left None
   """
   basis_directions: Sequence[BasisDirection]
   magnitudes: np.ndarray
-  basis_is_sorted: bool = False
-  _basis_set: Optional[set] = None
-  _direction_to_index: Optional[dict] = None
-
+  _basis_is_sorted: bool = False
   def __post_init__(self):
     """Sort basis directions."""
     if len(self.basis_directions) != self.magnitudes.shape[-1]:
@@ -81,25 +74,22 @@ class VectorInBasis:
           f"of basis directions. Was {len(self.basis_directions)} "
           f"and {self.magnitudes.shape[-1]}.")
 
-    if not self.basis_is_sorted:
+    if not self._basis_is_sorted:
       sort_idx = np.argsort(self.basis_directions)
       self.basis_directions = [self.basis_directions[i] for i in sort_idx]
       self.magnitudes = np.take(self.magnitudes, sort_idx, -1)
-      self.basis_is_sorted = True
-
-  def get_basis_set(self):
-    if self._basis_set is not None:
-      return self._basis_set
-    else:
-      self._basis_set = set(self.basis_directions)
-      return self._basis_set
+      self._basis_is_sorted = True
+    
+  @cached_property
+  def basis_set(self) -> Set[BasisDirection]:
+    """basis_directions stored in a set for faster lookups"""
+    return set(self.basis_directions)
   
-  def get_direction_to_index(self):
-    if self._direction_to_index is not None:
-      return self._direction_to_index
-    else:
-      self._direction_to_index = {direction: index for index, direction in enumerate(self.basis_directions)}
-      return self._direction_to_index
+  @cached_property
+  def direction_to_index(self) -> Dict[BasisDirection, int]:
+    """Dictionary mapping Basis Directions to their index in self.basis_directions."""
+    return {direction: index for index, direction in enumerate(self.basis_directions)}
+  
 
   def __add__(self, other: "VectorInBasis") -> "VectorInBasis":
     if self.basis_directions != other.basis_directions:
@@ -157,102 +147,103 @@ class VectorInBasis:
                np.stack([v.magnitudes for v in vectors], axis=axis))
 
   def project(
-      self, basis: Union["VectorSpaceWithBasis", Sequence[BasisDirection]]
+      self, basis_container: Union["VectorSpaceWithBasis", Sequence[BasisDirection]]
   ) -> "VectorInBasis":
     """Projects to the basis."""
-    if isinstance(basis, VectorSpaceWithBasis):
-      basis = basis.basis
+    if isinstance(basis_container, VectorSpaceWithBasis):
+      basis_directions = basis_container.basis
+    else:
+      basis_directions = basis_container
     components = []
-    # use a set for lookups, greatly improves performance
-    basis_set = self.get_basis_set()
-    direction_to_index = self.get_direction_to_index()
-    for direction in basis:
-      if direction in basis_set:
+    
+    direction_to_index = self.direction_to_index
+    for direction in basis_directions:
+      # use a set for lookups, greatly improves performance
+      if direction in self.basis_set:
         components.append(
             self.magnitudes[..., direction_to_index[direction]])
       else:
         components.append(np.zeros_like(self.magnitudes[..., 0]))
     
-    if isinstance(basis, VectorSpaceWithBasis): # we can save compute and construct the vector in basis from the vector space
-      return basis.to_vector_in_basis(np.stack(components, axis=-1))
-    else: # otherwise construct one from scratch, we may have to build the set and index dict if requested
-      return VectorInBasis(list(basis), np.stack(components, axis=-1), basis_is_sorted=True)
+    # Check if basis is a VectorSpaceWithBasis or just a list of basis directions
+    if isinstance(basis_container, VectorSpaceWithBasis):
+      # if so, we can save compute and construct the vector in basis from the vector space
+      return basis_container.make_vector(np.stack(components, axis=-1))
+    else: 
+      # otherwise construct one from scratch, we may have to build the set and index dict if requested
+      return VectorInBasis(list(basis_container), np.stack(components, axis=-1), _basis_is_sorted=True)
   
   def add_directions(self, vector: "VectorInBasis") -> "VectorInBasis":
     """
-    Equivalent to self += vector.project(self.basis)
+    Equivalent to self += vector.project(self.basis).
     This is to speed up accumulation into an output vector in the combine_in_parallel in vectorspace_fns
     """
-    directions_indices = self.get_direction_to_index()
+    directions_indices = self.direction_to_index
     new_magnitudes = np.array(self.magnitudes)
     for idx, basis in enumerate(vector.basis_directions):
       new_magnitudes[..., directions_indices[basis]] += vector.magnitudes[..., idx]
     return self.update_magnitudes(new_magnitudes)
   
-  def update_magnitudes(self, new_magnitudes):
-    vect = VectorInBasis(list(self.basis_directions), new_magnitudes, basis_is_sorted=True)
-    vect._basis_set = self._basis_set
-    vect._direction_to_index = self._direction_to_index
+  def update_magnitudes(self, new_magnitudes: np.ndarray) -> "VectorInBasis":
+    """Create a new VectorInBasis object from this with update magnitudes.
+
+    Will maintain any cached attributes we have computed prior
+    """
+    vect = VectorInBasis(list(self.basis_directions), new_magnitudes, _basis_is_sorted=True)
+    if "basis_set" in vars(self):
+      # we have spent the time to compute the basis set, so keep it in the copy
+      vect.basis_set = self.basis_set
+    if "direction_to_index" in vars(self):
+      # we have spent the time to compute the direction_to_index dictionary, so keep it in the copy
+      vect.direction_to_index = self.direction_to_index
     return vect
   
 @dataclasses.dataclass
 class VectorSpaceWithBasis:
-  """A vector subspace in a given basis.
-  
-  _basis_set and _direction_to_index should be left None
-  """
+  """A vector subspace in a given basis."""
   basis: Sequence[BasisDirection]
-  _basis_set: Optional[set] = None
-  _direction_to_index: Optional[dict] = None
 
   def __post_init__(self):
     """Keep basis directions sorted."""
     self.basis = sorted(self.basis)
     
-  def to_vector_in_basis(self, magnitudes):
-    vect = VectorInBasis(list(self.basis), magnitudes=magnitudes, basis_is_sorted=True)
-    vect._basis_set = self._basis_set
-    vect._direction_to_index = self._direction_to_index
+  def make_vector(self, magnitudes: np.ndarray) -> VectorInBasis:
+    """Creates a VectorInBasis from our basis and provided magnitudes."""
+    vect = VectorInBasis(list(self.basis), magnitudes=magnitudes, _basis_is_sorted=True)
     return vect
     
   @property
   def num_dims(self) -> int:
     return len(self.basis)
   
-  def get_basis_set(self):
-    if self._basis_set is not None:
-      return self._basis_set
-    else:
-      self._basis_set = set(self.basis)
-      return self._basis_set
+  @cached_property
+  def basis_set(self):
+    return set(self.basis)
   
-  def get_direction_to_index(self):
-    if self._direction_to_index is not None:
-      return self._direction_to_index
-    else:
-      self._direction_to_index = {direction: index for index, direction in enumerate(self.basis)}
-      return self._direction_to_index
+  @cached_property
+  def direction_to_index(self):
+    return {direction: index for index, direction in enumerate(self.basis)}
 
   def __contains__(self, item: Union[VectorInBasis, BasisDirection]) -> bool:
     if isinstance(item, BasisDirection):
-      return item in self.get_basis_set()
+      return item in self.basis_set
     # item is a VectorInBasis, so it must also be sorted under the same ordering so we can just check the lists
     return self.basis == item.basis_directions
 
   def issubspace(self, other: "VectorSpaceWithBasis") -> bool:
-    return self.get_basis_set().issubset(other.get_basis_set())
+    return self.basis_set.issubset(other.basis_set)
 
   def basis_vectors(self) -> Sequence[VectorInBasis]:
     basis_vector_magnitudes = list(np.eye(self.num_dims))
-    return [self.to_vector_in_basis(m) for m in basis_vector_magnitudes]
+    return [self.make_vector(m) for m in basis_vector_magnitudes]
 
   def vector_from_basis_direction(
       self, basis_direction: BasisDirection) -> VectorInBasis:
-    i = self.get_direction_to_index()[basis_direction]
-    return self.to_vector_in_basis(np.eye(self.num_dims)[i])
+    i = self.direction_to_index[basis_direction]
+    return self.make_vector(np.eye(self.num_dims)[i])
 
   def null_vector(self) -> VectorInBasis:
-    return self.to_vector_in_basis(np.zeros(self.num_dims))
+    return self.make_vector(np.zeros(self.num_dims))
 
   @classmethod
   def from_names(cls, names: Sequence[Name]) -> "VectorSpaceWithBasis":
