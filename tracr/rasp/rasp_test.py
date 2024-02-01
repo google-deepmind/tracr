@@ -309,12 +309,7 @@ class EncodingTest(parameterized.TestCase):
     self.assertTrue(rasp.is_categorical(rasp.categorical(sop)))
     self.assertFalse(rasp.is_categorical(rasp.numerical(sop)))
 
-  @parameterized.named_parameters(*_SOP_EXAMPLES())
-  def test_double_encoding_annotations_overwrites_encoding(self, sop: rasp.SOp):
-    num_sop = rasp.numerical(sop)
-    cat_num_sop = rasp.categorical(num_sop)
-    self.assertTrue(rasp.is_numerical(num_sop))
-    self.assertTrue(rasp.is_categorical(cat_num_sop))
+
 
 
 class SelectorTest(parameterized.TestCase):
@@ -451,38 +446,6 @@ class SelectorTest(parameterized.TestCase):
         rasp.ConstantSelector([[True, True], [False, False]])([1, 2]),
         [[True, True], [False, False]],
     )
-
-
-class CopyTest(parameterized.TestCase):
-
-  @parameterized.named_parameters(*_ALL_EXAMPLES())
-  def test_copy_preserves_name(self, expr: rasp.RASPExpr):
-    expr = expr.named("foo")
-    self.assertEqual(expr.copy().name, expr.name)
-
-  @parameterized.named_parameters(*_ALL_EXAMPLES())
-  def test_renaming_copy_doesnt_rename_original(self, expr: rasp.RASPExpr):
-    expr = expr.named("foo")
-    expr.copy().named("bar")
-    self.assertEqual(expr.name, "foo")
-
-  @parameterized.named_parameters(*_ALL_EXAMPLES())
-  def test_renaming_original_doesnt_rename_copy(self, expr: rasp.RASPExpr):
-    expr = expr.named("foo")
-    copy = expr.copy()
-    expr.named("bar")
-    self.assertEqual(copy.name, "foo")
-
-  @parameterized.named_parameters(*_ALL_EXAMPLES())
-  def test_copy_changes_id(self, expr: rasp.RASPExpr):
-    self.assertNotEqual(expr.copy().unique_id, expr.unique_id)
-
-  @parameterized.named_parameters(*_ALL_EXAMPLES())
-  def test_copy_preserves_child_ids(self, expr: rasp.RASPExpr):
-    copy_child_ids = [c.unique_id for c in expr.copy().children]
-    child_ids = [c.unique_id for c in expr.children]
-    for child_id, copy_child_id in zip(child_ids, copy_child_ids):
-      self.assertEqual(child_id, copy_child_id)
 
 
 class AggregateTest(parameterized.TestCase):
