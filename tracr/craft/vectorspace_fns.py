@@ -95,7 +95,12 @@ class Linear(VectorFunction):
     joint_output_space = bases.join_vector_spaces(
         *[fn.output_space for fn in fns])
     
-    # precompute properties for these parents to avoid recomputing for every single child
+    # Precompute properties for these parents to avoid recomputing for every single child.
+    # Since the direction_to_index property of the children of these objects is needed
+    # within actions it would be computed for every single child, this computation would be
+    # redundant as it does not spread to other objects as references are not shared, if we 
+    # precompute the attribute here we will save the computation from being repeated
+    # across all the children of these two spaces
     joint_input_space.direction_to_index
     joint_output_space.direction_to_index
 
