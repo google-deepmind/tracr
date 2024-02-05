@@ -24,8 +24,10 @@ class VectorInBasisTest(tests_common.VectorFnTestCase):
 
   def test_shape_mismatch_raises_value_error(self):
     vs1 = bases.VectorSpaceWithBasis.from_names(["a", "b"])
-    regex = (r"^.*Last dimension of magnitudes must be the same as number of "
-             r"basis directions.*$")
+    regex = (
+        r"^.*Last dimension of magnitudes must be the same as number of "
+        r"basis directions.*$"
+    )
     with self.assertRaisesRegex(ValueError, regex):
       bases.VectorInBasis(vs1.basis, np.array([1, 2, 3, 4]))
     with self.assertRaisesRegex(ValueError, regex):
@@ -76,6 +78,14 @@ class VectorInBasisTest(tests_common.VectorFnTestCase):
     self.assertEqual(v - five, v_minus_5)
     minus_v = bases.VectorInBasis(vs1.basis, np.array([0, -1, -2]))
     self.assertEqual(-v, minus_v)
+
+  def test_add_directions(self):
+    vs1 = bases.VectorSpaceWithBasis.from_names(["a", "b", "c"])
+    expected = bases.VectorInBasis(vs1.basis, np.array([3, 4, 5]))
+    v = bases.VectorInBasis(vs1.basis, np.array([0, 1, 2]))
+    three = bases.VectorInBasis(vs1.basis, np.array([3, 3, 3]))
+    shifted = v.add_directions(three)
+    self.assertEqual(shifted, expected)
 
 
 class ProjectionTest(tests_common.VectorFnTestCase):

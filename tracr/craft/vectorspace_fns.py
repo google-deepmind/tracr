@@ -19,7 +19,6 @@ import dataclasses
 from typing import Callable, Sequence
 
 import numpy as np
-
 from tracr.craft import bases
 
 VectorSpaceWithBasis = bases.VectorSpaceWithBasis
@@ -66,10 +65,7 @@ class Linear(VectorFunction):
   def __call__(self, x: VectorInBasis) -> VectorInBasis:
     if x not in self.input_space:
       raise TypeError(f"x={x} not in self.input_space={self.input_space}.")
-    return VectorInBasis(
-        basis_directions=sorted(self.output_space.basis),
-        magnitudes=x.magnitudes @ self.matrix,
-    )
+    return self.output_space.make_vector(x.magnitudes @ self.matrix)
 
   @classmethod
   def from_action(
@@ -84,8 +80,10 @@ class Linear(VectorFunction):
     for i, direction in enumerate(input_space.basis):
       out_vector = action(direction)
       if out_vector not in output_space:
-        raise TypeError(f"image of {direction} from input_space={input_space} "
-                        f"is not in output_space={output_space}")
+        raise TypeError(
+            f"image of {direction} from input_space={input_space} "
+            f"is not in output_space={output_space}"
+        )
       matrix[i, :] = out_vector.magnitudes
 
     return Linear(input_space, output_space, matrix)
@@ -94,16 +92,27 @@ class Linear(VectorFunction):
   def combine_in_parallel(cls, fns: Sequence["Linear"]) -> "Linear":
     """Combines multiple parallel linear functions into a single one."""
     joint_input_space = bases.join_vector_spaces(
-        *[fn.input_space for fn in fns])
+        *[fn.input_space for fn in fns]
+    )
     joint_output_space = bases.join_vector_spaces(
-        *[fn.output_space for fn in fns])
+        *[fn.output_space for fn in fns]
+    )
+
+    # Cache properties for the parents to avoid recomputing for each child.
+    # Since the index_by_direction cached_property of the children is needed
+    # within the action, it would be computed for every single child. This is
+    # redundant as they share the same basis. By accessing the properties here,
+    # we ensure they are only computed once and passed on to the children.
+    _ = joint_input_space.index_by_direction
+    _ = joint_output_space.index_by_direction
 
     def action(x: bases.BasisDirection) -> bases.VectorInBasis:
       out = joint_output_space.null_vector()
       for fn in fns:
         if x in fn.input_space:
           x_vec = fn.input_space.vector_from_basis_direction(x)
-          out += fn(x_vec).project(joint_output_space)
+          applied = fn(x_vec)
+          out = out.add_directions(applied)
       return out
 
     return cls.from_action(joint_input_space, joint_output_space, action)
@@ -127,6 +136,7 @@ def project(
 @dataclasses.dataclass
 class ScalarBilinear:
   """A scalar-valued bilinear operator."""
+
   left_space: VectorSpaceWithBasis
   right_space: VectorSpaceWithBasis
   matrix: np.ndarray
