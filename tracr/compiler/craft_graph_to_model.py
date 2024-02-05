@@ -27,51 +27,64 @@ Node = nodes.Node
 NodeID = nodes.NodeID
 
 
-def _get_longest_path_length_to_node(graph: nx.DiGraph, sources: Sequence[Node],
-                                     node: Node) -> int:
-  """Returns the lengths of the longest path from sources to node.
+def compute_computational_depth(
+    graph: nx.DiGraph, sources_ids: Sequence[int]
+) -> Dict[int, int]:
+  """Returns the computational depth of each node in the graph.
 
-  Only SOps count towards the length of a path.
+  Given source nodes, runs DFS to tracr the maximum computational depth from all
+    source nodes to every node in the graph.
+
+  Non-SOp nodes do not count in the depth calculation.
+
+  Disconnected nodes have depth -1.
 
   Args:
-    graph: DAG to compute longest path in.
-    sources: List of starting nodes, longest path will be a maximum over all.
-    node: Target node.
+    graph: RASP computational graph where all nodes are annotated with # EXPR
+      attributes set to rasp primitives
+    sources_ids: Sequence of integers to measure computational depth against
 
   Returns:
-    Number of steps needed for the longest path from the source to the node, or
-    -1 if there is no path from any of the sources to the target node.
+    a dictionary mapping all graph nodes to a computational depth
   """
-  if node in sources:
-    return 0
+  computational_depth = {}
 
-  def num_sops(path: Sequence[NodeID]) -> int:
-    num = 0
-    for node_id in path:
-      if isinstance(graph.nodes[node_id][nodes.EXPR], rasp.SOp):
-        num += 1
-    return num
+  def dfs(node_id, depth):
+    if node_id in computational_depth:
+      computational_depth[node_id] = max(depth, computational_depth[node_id])
+    else:
+      computational_depth[node_id] = depth
 
-  result = -1
-  for source in sources:
-    all_paths = nx.all_simple_paths(graph, source[nodes.ID], node[nodes.ID])
-    longest_path_len = max(map(num_sops, all_paths), default=-1) - 1
-    if longest_path_len > result:
-      result = longest_path_len
-  return result
+    for successor_id in graph.successors(node_id):
+      if not isinstance(graph.nodes[successor_id][nodes.EXPR], rasp.SOp):
+        dfs(successor_id, depth)
+      else:
+        dfs(successor_id, depth + 1)
+
+  for source_id in sources_ids:
+    dfs(source_id, depth=0)
+
+  # ensure any disconnected nodes are given a depth -1
+  disconnected_nodes = set(graph.nodes) - set(computational_depth.keys())
+  for disconnected_node in disconnected_nodes:
+    computational_depth[disconnected_node] = -1
+
+  return computational_depth
 
 
 def _node_is_attn(node: Node) -> bool:
   """Returns True if node is an attention layer."""
   return nodes.MODEL_BLOCK in node and isinstance(
       node[nodes.MODEL_BLOCK],
-      (transformers.AttentionHead, transformers.MultiAttentionHead))
+      (transformers.AttentionHead, transformers.MultiAttentionHead),
+  )
 
 
 def _node_is_mlp(node: Node) -> bool:
   """Returns True if node is an MLP layer."""
-  return nodes.MODEL_BLOCK in node and isinstance(node[nodes.MODEL_BLOCK],
-                                                  transformers.MLP)
+  return nodes.MODEL_BLOCK in node and isinstance(
+      node[nodes.MODEL_BLOCK], transformers.MLP
+  )
 
 
 def _node_is_residual_block(node: Node) -> bool:
@@ -80,10 +93,9 @@ def _node_is_residual_block(node: Node) -> bool:
   if block and isinstance(block, transformers.SeriesWithResiduals):
     if len(block.blocks) == 2:
       attn, mlp = block.blocks
-      if (isinstance(
-          attn,
-          (transformers.AttentionHead, transformers.MultiAttentionHead)) and
-          isinstance(mlp, transformers.MLP)):
+      if isinstance(
+          attn, (transformers.AttentionHead, transformers.MultiAttentionHead)
+      ) and isinstance(mlp, transformers.MLP):
         return True
   return False
 
@@ -104,8 +116,9 @@ def _all_mlp_nodes(node_list: Sequence[Node]) -> bool:
   return True
 
 
-def _allocate_modules_to_layers(graph: nx.DiGraph,
-                                sources: Sequence[Node]) -> Dict[int, int]:
+def _allocate_modules_to_layers(
+    graph: nx.DiGraph, sources: Sequence[Node]
+) -> Dict[int, int]:
   """Allocate all nodes in compute graph to layers.
 
   First, computes the longest path from the input to each node that is a model
@@ -131,15 +144,19 @@ def _allocate_modules_to_layers(graph: nx.DiGraph,
   layer_allocation: Dict[int, int] = collections.defaultdict(lambda: -1)
   depth_by_node_id: Dict[int, int] = dict()
   nodes_by_depth: Dict[int, List[Node]] = collections.defaultdict(list)
-
-  # Compute depth of all model components (longest path from source to node)
+  computational_depth = compute_computational_depth(
+      graph, [src[nodes.ID] for src in sources]
+  )
   for node_id, node in graph.nodes.items():
-    if (_node_is_mlp(node) or _node_is_attn(node)
-        or _node_is_residual_block(node)):
+    if (
+        _node_is_mlp(node)
+        or _node_is_attn(node)
+        or _node_is_residual_block(node)
+    ):
       # Node is a model component
-      longest_path_len = _get_longest_path_length_to_node(graph, sources, node)
-      depth_by_node_id[node_id] = longest_path_len
-      nodes_by_depth[longest_path_len].append(node)
+      depth = computational_depth[node_id]
+      depth_by_node_id[node_id] = depth
+      nodes_by_depth[depth].append(node)
 
   # If at level `depth` there are only attention heads and at level `depths + 1`
   # there are only MLPs, we can condense them into one level
@@ -151,7 +168,8 @@ def _allocate_modules_to_layers(graph: nx.DiGraph,
   depth = min_depth
   while depth < max_depth:
     if _all_attn_nodes(nodes_by_depth[depth]) and _all_mlp_nodes(
-        nodes_by_depth[depth + 1]):
+        nodes_by_depth[depth + 1]
+    ):
       # Condense by decrementing the depth of all nodes starting from depth+1
       for update_depth in range(depth + 1, max_depth + 1):
         for node in nodes_by_depth[update_depth]:
@@ -180,8 +198,8 @@ def _allocate_modules_to_layers(graph: nx.DiGraph,
 
 
 def craft_graph_to_model(
-    graph: nx.DiGraph,
-    sources: Sequence[Node]) -> transformers.SeriesWithResiduals:
+    graph: nx.DiGraph, sources: Sequence[Node]
+) -> transformers.SeriesWithResiduals:
   """Translates a RASP graph with craft blocks into a full craft model.
 
   1. Allocate modules to layers, assuming layers in the order
@@ -212,18 +230,22 @@ def craft_graph_to_model(
     if _node_is_residual_block(node):
       assert isinstance(block, transformers.SeriesWithResiduals)
       assert len(block.blocks) == 2
-      residual_space = bases.join_vector_spaces(residual_space,
-                                                block.blocks[0].residual_space,
-                                                block.blocks[1].residual_space)
+      residual_space = bases.join_vector_spaces(
+          residual_space,
+          block.blocks[0].residual_space,
+          block.blocks[1].residual_space,
+      )
       blocks_by_layer[layer_no].append(block.blocks[0])
       blocks_by_layer[layer_no + 1].append(block.blocks[1])
     elif block:
       residual_space = bases.join_vector_spaces(
-          residual_space, node[nodes.MODEL_BLOCK].residual_space)
+          residual_space, node[nodes.MODEL_BLOCK].residual_space
+      )
       blocks_by_layer[layer_no].append(block)
 
   for layer_no, layer_blocks in sorted(
-      blocks_by_layer.items(), key=lambda x: x[0]):
+      blocks_by_layer.items(), key=lambda x: x[0]
+  ):
     for block in layer_blocks:
       block.residual_space = residual_space
 

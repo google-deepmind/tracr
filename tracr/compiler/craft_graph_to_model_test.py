@@ -48,7 +48,7 @@ class CraftAllocateModulesToLayersTest(parameterized.TestCase):
     else:
       return None
 
-  def test_get_longest_path_length_to_node_returns_expected_result(self):
+  def test_compute_computational_depth_returns_expected_result(self):
     """Creates a graph and checks the longest path for each node."""
 
     # Node IDs:
@@ -86,10 +86,11 @@ class CraftAllocateModulesToLayersTest(parameterized.TestCase):
     graph.add_edge(9, 4)
     sources = [graph.nodes[0], graph.nodes[5]]
 
+    computational_depth = craft_graph_to_model.compute_computational_depth(
+        graph, [src[nodes.ID] for src in sources]
+    )
     for node_id, node in graph.nodes.items():
-      result = craft_graph_to_model._get_longest_path_length_to_node(
-          graph, sources, node)
-      self.assertEqual(result, node["expected_result"])
+      self.assertEqual(computational_depth[node_id], node["expected_result"])
 
   def test_allocate_modules_to_layers_returns_expected_result(self):
     """Creates a graph and checks if the correct layer assignment is returned."""
