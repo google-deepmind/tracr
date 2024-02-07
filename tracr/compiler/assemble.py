@@ -130,7 +130,8 @@ def _get_model_config_and_module_names(
 
   if multi_attn_heads:
     num_heads = max(len(heads) for heads in multi_attn_heads)
-    key_size = max(max(head.w_qk.matrix.shape) for head in heads)
+    key_size = max([max(head.w_qk.matrix.shape) for head in heads] + 
+                  [max(head.w_ov.matrix.shape) for head in heads])
   else:
     num_heads, key_size = 1, 1
 
